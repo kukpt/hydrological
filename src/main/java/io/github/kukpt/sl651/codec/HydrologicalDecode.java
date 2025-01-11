@@ -37,8 +37,6 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
 
   private MessageHeader header;
 
-  private Integer remainingLength;
-
   @Override
   protected void decode(
   ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> out) throws Exception {
@@ -47,7 +45,7 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
         throw new DecoderException("CRC16校验错误!");
       }
       header = decodeHeader(byteBuf);
-      remainingLength = header.remainingLength();
+      int remainingLength = header.remainingLength();
       // 报文正文开始
       if (STX != byteBuf.readByte()) {
         throw new DecoderException("报文正文开始标识符错误!需要 (" + STX + ")");

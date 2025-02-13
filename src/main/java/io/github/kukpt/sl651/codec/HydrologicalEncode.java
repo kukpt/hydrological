@@ -6,7 +6,7 @@ import io.netty.handler.codec.MessageToMessageEncoder;
 
 import java.util.List;
 
-public class HydrologicalDownstreamMessageEncode extends MessageToMessageEncoder<HydrologicalDownstreamMessage> {
+public class HydrologicalEncode extends MessageToMessageEncoder<HydrologicalDownstreamMessage> {
 
   @Override
   protected void encode(ChannelHandlerContext ctx, HydrologicalDownstreamMessage downstreamMessage, List<Object> out) throws Exception {

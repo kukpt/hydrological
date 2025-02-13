@@ -28,7 +28,10 @@ public class MessageHeader {
                        String telemetryStationAddress,
                        int password,
                        FunctionType functionType,
-                       int remainingLength) {
+                       int remainingLength,
+                       short frameStart,
+                       int totalLength,
+                       int currentLength) {
     this.centralStationAddress = centralStationAddress;
     this.telemetryStationAddress = ObjectUtil.checkNotNull(telemetryStationAddress, "遥测站地址");
     this.password = password;
@@ -61,6 +64,21 @@ public class MessageHeader {
    */
   private int remainingLength;
 
+  /**
+   * 报文起始符
+   */
+  private short frameStart;
+
+  /**
+   * 包总数
+   */
+  private int totalPackage;
+
+  /**
+   * 当前包
+   */
+  private int currentPackage;
+
   public short centralStationAddress() {
     return centralStationAddress;
   }
@@ -80,6 +98,12 @@ public class MessageHeader {
   public int remainingLength() {
     return remainingLength;
   }
+
+  public short frameStart() {
+    return frameStart;
+  }
+
+
 
   @Override
   public String toString() {

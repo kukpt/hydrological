@@ -6,13 +6,7 @@ import io.netty.handler.codec.DecoderResult;
 public class HydrologicalMessageFactory {
 
   public static HydrologicalDownstreamMessage createM2Ack(MessageHeader header, int streamId) {
-    MessageHeader messageHeader = new MessageHeader(header.centralStationAddress(),
-                                                    header.telemetryStationAddress(),
-                                                    header.password(),
-                                                    header.functionType(),
-                                                    0);
-
-    return new HydrologicalDownstreamMessage(messageHeader, new M2LinkModeAckMessage(streamId), HydroLogicalUtils.EOT);
+    return new HydrologicalDownstreamMessage(header, new M2LinkModeAckMessage(streamId), HydroLogicalUtils.EOT);
   }
 
   public static HydrologicalMessage newMessage(MessageHeader header, Object payload) {

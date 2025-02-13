@@ -236,7 +236,7 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
    * @return
    */
   Future<Void> downstreamQueryControl(String tsAddr, FunctionType type, DownstreamMessageContent content) {
-    MessageHeader header = new MessageHeader(centralStationAddress, tsAddr, protocolPassword, type, 0);
+    MessageHeader header = new MessageHeader(centralStationAddress, tsAddr, protocolPassword, type, 0, (byte) HydroLogicalUtils.STX, 0, 0);
     HydrologicalDownstreamMessage downstreamMessage = new HydrologicalDownstreamMessage(header, content,
                                                                                         HydroLogicalUtils.ENQ);
     return this.write(downstreamMessage);

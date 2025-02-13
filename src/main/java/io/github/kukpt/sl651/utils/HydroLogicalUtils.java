@@ -12,7 +12,15 @@ public class HydroLogicalUtils {
 
   public static final short ETX = 0x03;
 
+  /**
+   * 传输正文开始
+   */
   public static final short STX = 0x02;
+
+  /**
+   * 多包传输正文开始
+   */
+  public static final short SYN = 0x16;
 
   public static final short EOT = 0x04;
 

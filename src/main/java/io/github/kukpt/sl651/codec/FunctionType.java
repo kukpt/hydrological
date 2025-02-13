@@ -9,6 +9,7 @@ public enum FunctionType {
   TIMING(0x32),    // 遥测站定时报      index: 4
   ADDITIONAL(0x33),// 遥测站加报报      index: 5
   HOURLY(0x34),    // 遥测站小时报      index: 6
+  PICTURE(0x36),   // 图片报
   PUMP_CONTROL(0x4C);  // 泵站控制
 
 

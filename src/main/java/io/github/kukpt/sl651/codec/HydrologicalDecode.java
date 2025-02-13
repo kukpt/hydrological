@@ -7,6 +7,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.DecoderException;
 
+import java.nio.ByteBuffer;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Collection;
@@ -14,9 +15,7 @@ import java.util.List;
 
 import static io.github.kukpt.sl651.codec.FunctionType.LINK_KEEP;
 import static io.github.kukpt.sl651.codec.FunctionType.PUMP_CONTROL;
-import static io.github.kukpt.sl651.utils.HydroLogicalUtils.FRAME_START_CHARACTER;
-import static io.github.kukpt.sl651.utils.HydroLogicalUtils.ETX;
-import static io.github.kukpt.sl651.utils.HydroLogicalUtils.STX;
+import static io.github.kukpt.sl651.utils.HydroLogicalUtils.*;
 
 
 public class HydrologicalDecode extends ByteToMessageDecoder {
@@ -47,9 +46,9 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
       header = decodeHeader(byteBuf);
       int remainingLength = header.remainingLength();
       // 报文正文开始
-      if (STX != byteBuf.readByte()) {
-        throw new DecoderException("报文正文开始标识符错误!需要 (" + STX + ")");
-      }
+//      if (STX != header.frameStart()) {
+//        throw new DecoderException("报文正文开始标识符错误!需要 (" + STX + ")");
+//      }
       // 链路维持报
       if (LINK_KEEP.equals(header.functionType())) {
         Result<LinkKeepMessage> result = decodeLinkKeep(byteBuf);
@@ -123,7 +122,18 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
     if (len < 0 || len > 4095) {
       throw new DecoderException("报文长度错误, 需要[1~4095],输入len= [" + len + "]");
     }
-    return new MessageHeader(cAddr, tAddr, password, ft, len);
+    byte frameStart = byteBuf.readByte();
+    if (frameStart == SYN) {
+      // 多包传输正文开始
+      byte[] bs = new byte[4];
+      byteBuf.readBytes(bs, 1, 3);
+      ByteBuffer bb = ByteBuffer.wrap(bs);
+      int packages = bb.getInt();
+      int currentPackage = packages & 0xFFF;
+      int totalPackage = packages >>> 12;
+      return new MessageHeader(cAddr, tAddr, password, ft, len, frameStart, currentPackage, totalPackage);
+    }
+    return new MessageHeader(cAddr, tAddr, password, ft, len, frameStart, 0, 0);
   }
 
 

@@ -4,7 +4,7 @@ import io.github.kukpt.sl651.HydrologicalEndpoint;
 import io.github.kukpt.sl651.HydrologicalServer;
 import io.github.kukpt.sl651.HydrologicalServerOptions;
 import io.github.kukpt.sl651.codec.HydrologicalDecode;
-import io.github.kukpt.sl651.codec.HydrologicalDownstreamMessageEncode;
+import io.github.kukpt.sl651.codec.HydrologicalEncode;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -42,7 +42,7 @@ public class HydrologicalServerImpl implements HydrologicalServer {
   private void initChannel(ChannelPipeline pipeline) {
     // the SL651-2014 max frame length is 0xFFF
     pipeline.addBefore("handler", "frame-decode", new LengthFieldBasedFrameDecoder(0xfff, 11, 2, 4, 0));
-    pipeline.addBefore("handler", "hydrological-encode", new HydrologicalDownstreamMessageEncode());
+    pipeline.addBefore("handler", "hydrological-encode", new HydrologicalEncode());
     pipeline.addBefore("handler", "hydrological-decode", new HydrologicalDecode());
     pipeline.addBefore("handler", "idle", new IdleStateHandler(options.getTimeoutOnConnect(), 0, 0));
   }

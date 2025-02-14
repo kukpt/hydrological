@@ -1,22 +1,27 @@
 package io.github.kukpt.sl651.codec;
 
 
+import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderResult;
+
+import static io.github.kukpt.sl651.utils.HydroLogicalUtils.ETB;
 
 
 public class HydrologicalMessage {
 
   private final MessageHeader header;
 
-  private final Object payload;
+  private final ByteBuf payload;
 
   private final DecoderResult coderResult;
+
+  private final short frameEnd;
 
   public MessageHeader header() {
     return header;
   }
 
-  public Object payload() {
+  public ByteBuf payload() {
     return payload;
   }
 
@@ -24,10 +29,16 @@ public class HydrologicalMessage {
     return coderResult;
   }
 
-  HydrologicalMessage(MessageHeader header, Object payload, DecoderResult coderResult) {
+  public boolean hasNextFrame() {
+    return frameEnd == ETB;
+  }
+
+
+  HydrologicalMessage(MessageHeader header, ByteBuf payload, DecoderResult coderResult, short frameEnd) {
     this.header = header;
     this.payload = payload;
     this.coderResult = coderResult;
+    this.frameEnd = frameEnd;
   }
 
   @Override

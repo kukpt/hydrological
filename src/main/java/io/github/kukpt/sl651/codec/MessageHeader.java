@@ -5,8 +5,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.internal.ObjectUtil;
 
-import static io.github.kukpt.sl651.utils.HydroLogicalUtils.FRAME_START_CHARACTER;
-import static io.github.kukpt.sl651.utils.HydroLogicalUtils.STX;
+import static io.github.kukpt.sl651.utils.HydroLogicalUtils.*;
 
 public class MessageHeader {
 
@@ -37,6 +36,9 @@ public class MessageHeader {
     this.password = password;
     this.functionType = ObjectUtil.checkNotNull(functionType, "functionType");
     this.remainingLength = remainingLength;
+    this.frameStart = frameStart;
+    this.totalPackage = totalLength;
+    this.currentPackage = currentLength;
   }
 
   /**
@@ -103,7 +105,21 @@ public class MessageHeader {
     return frameStart;
   }
 
+  /**
+   * 多包报文
+   * @return
+   */
+  public boolean multiPack() {
+    return SYN == frameStart;
+  }
 
+  public int totalPackage() {
+    return totalPackage;
+  }
+
+  public int currentPackage() {
+    return currentPackage;
+  }
 
   @Override
   public String toString() {

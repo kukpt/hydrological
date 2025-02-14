@@ -45,39 +45,44 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
       }
       header = decodeHeader(byteBuf);
       int remainingLength = header.remainingLength();
-      // 报文正文开始
-//      if (STX != header.frameStart()) {
-//        throw new DecoderException("报文正文开始标识符错误!需要 (" + STX + ")");
-//      }
-      // 链路维持报
-      if (LINK_KEEP.equals(header.functionType())) {
-        Result<LinkKeepMessage> result = decodeLinkKeep(byteBuf);
-        remainingLength = remainingLength - result.numberOfBytesConsumed;
-        HydrologicalMessage message = HydrologicalMessageFactory.newMessage(header, result.value);
-        out.add(message);
-      }
-      // 泵站控制回复
-      else if (PUMP_CONTROL.equals(header.functionType())) {
-        Result<PumpStationControlResponseMessage> result = decodePumpControl(byteBuf);
-        remainingLength = remainingLength - result.numberOfBytesConsumed;
-        HydrologicalMessage message = HydrologicalMessageFactory.newMessage(header, result.value);
-        out.add(message);
-      }
-      // 测试报，均匀时段水文信息报，遥测站定时报，遥测站加报报，遥测站小时报
-      else {
-        Result<FixedBodyMessage> fixedBodyMessageResult = decodeFixedBodyMessage(byteBuf);
-        Result<?> result = decodeBody(header.functionType(), fixedBodyMessageResult.value, byteBuf);
-        remainingLength = remainingLength - fixedBodyMessageResult.numberOfBytesConsumed - result.numberOfBytesConsumed;
-        HydrologicalMessage message = HydrologicalMessageFactory.newMessage(header, result.value);
-        out.add(message);
-      }
 
-      byteBuf.skipBytes(3); // 跳过 报文结束标识和CRC校验码
-      if (remainingLength != 0) {
-        throw new DecoderException(
-        "non-zero remaining payload bytes: " +
-        remainingLength + " (" + header.functionType() + ')');
-      }
+      ByteBuf payload = byteBuf.readBytes(remainingLength);
+      short frameEnd = byteBuf.readUnsignedByte();
+      int crcCode = byteBuf.readUnsignedShort();
+
+      HydrologicalMessage msg = HydrologicalMessageFactory.newMessage(header, payload, frameEnd, crcCode);
+      out.add(msg);
+
+//      // 链路维持报
+//      if (LINK_KEEP.equals(header.functionType())) {
+//        Result<LinkKeepMessage> result = decodeLinkKeep(byteBuf);
+//        remainingLength = remainingLength - result.numberOfBytesConsumed;
+//        HydrologicalMessage message = HydrologicalMessageFactory.newMessage(header, result.value);
+//        out.add(message);
+//      }
+//      // 泵站控制回复
+//      else if (PUMP_CONTROL.equals(header.functionType())) {
+//        Result<PumpStationControlResponseMessage> result = decodePumpControl(byteBuf);
+//        remainingLength = remainingLength - result.numberOfBytesConsumed;
+//        HydrologicalMessage message = HydrologicalMessageFactory.newMessage(header, result.value);
+//        out.add(message);
+//      }
+//      // 测试报，均匀时段水文信息报，遥测站定时报，遥测站加报报，遥测站小时报
+//      else {
+//        Result<FixedBodyMessage> fixedBodyMessageResult = decodeFixedBodyMessage(byteBuf);
+//        Result<?> result = decodeBody(header.functionType(), fixedBodyMessageResult.value, byteBuf);
+//        remainingLength = remainingLength - fixedBodyMessageResult.numberOfBytesConsumed - result
+//        .numberOfBytesConsumed;
+//        HydrologicalMessage message = HydrologicalMessageFactory.newMessage(header, result.value);
+//        out.add(message);
+//      }
+//
+//      byteBuf.skipBytes(3); // 跳过 报文结束标识和CRC校验码
+//      if (remainingLength != 0) {
+//        throw new DecoderException(
+//        "non-zero remaining payload bytes: " +
+//        remainingLength + " (" + header.functionType() + ')');
+//      }
 
     } catch (Exception cause) {
       byteBuf.skipBytes(actualReadableBytes());
@@ -156,7 +161,7 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
 
   private static Result<LinkKeepMessage> decodeLinkKeep(ByteBuf byteBuf) {
     LinkKeepMessage linkKeepMessage = new LinkKeepMessage(byteBuf.readUnsignedShort(),
-    HydroLogicalUtils.readReportTimeStr(byteBuf));
+                                                          HydroLogicalUtils.readReportTimeStr(byteBuf));
     return new Result<>(linkKeepMessage, 2 + 6);
   }
 
@@ -175,7 +180,7 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
   private static Result<TestMessage> decodeTestMessage(ByteBuf byteBuf, FixedBodyMessage fixedBodyMessage) {
     Result<Collection<ElementResult>> collectionResult = decodeDefaultElementResults(byteBuf);
     final TestMessage message = new TestMessage(fixedBodyMessage,
-    collectionResult.value);
+                                                collectionResult.value);
     return new Result<>(message, collectionResult.numberOfBytesConsumed);
   }
 
@@ -236,7 +241,7 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
     ObservationTime observationTime = HydroLogicalUtils.readObservationTimeSkipElementId(byteBuf);
     int numberOfBytesConsumed = 2 + 6 + 7 + 1 + 7;
     FixedBodyMessage fixedBodyMessage = new FixedBodyMessage(streamId, reportTime, stationAddr, classificationCode,
-    observationTime);
+                                                             observationTime);
     return new Result<>(fixedBodyMessage, numberOfBytesConsumed);
   }
 
@@ -303,7 +308,8 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
         return new ElementResult(status, elementId, 4);
       default:
         // value type double
-        return new ElementResult(HydroLogicalUtils.readBcdNumber(byteBuf, elementId.readLength(), elementId.numberPoint()), elementId,
+        return new ElementResult(
+        HydroLogicalUtils.readBcdNumber(byteBuf, elementId.readLength(), elementId.numberPoint()), elementId,
         elementId.readLength());
     }
   }

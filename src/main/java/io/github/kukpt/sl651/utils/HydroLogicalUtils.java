@@ -10,7 +10,15 @@ public class HydroLogicalUtils {
 
   public static final int FRAME_START_CHARACTER = 0x7E7E;
 
+  /**
+   * 报文结束，后续无报文
+   */
   public static final short ETX = 0x03;
+
+  /**
+   * 报文结束，后续有报文
+   */
+  public static final short ETB = 0x17;
 
   /**
    * 传输正文开始

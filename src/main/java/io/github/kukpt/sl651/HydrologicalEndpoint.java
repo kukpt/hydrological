@@ -17,26 +17,16 @@ public interface HydrologicalEndpoint {
 
   String endpointId();
 
-  HydrologicalEndpoint testMessageHandler(Handler<TestMessage> testMessageHandler);
-
-  HydrologicalEndpoint periodMessageHandler(Handler<PeriodMessage> periodMessageHandler);
-
-  HydrologicalEndpoint timingMessageHandler(Handler<TimingMessage> timingMessageHandler);
-
-  HydrologicalEndpoint additionalMessageHandler(Handler<AdditionalMessage> additionalMessageHandler);
-
-  HydrologicalEndpoint hourlyMessageHandler(Handler<HourlyMessage> hourlyMessageHandler);
-
-  HydrologicalEndpoint pumpControlResponseHandler(Handler<PumpStationControlResponseMessage> pumpControlResponseHandler);
+  HydrologicalEndpoint messageHandler(Handler<HydrologicalMessage> messageHandler);
 
   HydrologicalEndpoint closeHandler(Handler<Void> closeHandler);
 
   HydrologicalEndpoint exceptionHandler(Handler<Throwable> handler);
-  /**
-   * 泵站控制
-   * @param tsAddr
-   * @param command 按照对应的数据位，0 关， 1 开。目前总共可以控制8路，实际可以拓展。
-   * @return
-   */
-  Future<Integer> pumpStationControl(String tsAddr, short command) ;
+//  /**
+//   * 泵站控制
+//   * @param tsAddr
+//   * @param command 按照对应的数据位，0 关， 1 开。目前总共可以控制8路，实际可以拓展。
+//   * @return
+//   */
+//  Future<Integer> pumpStationControl(String tsAddr, short command) ;
 }

@@ -23,8 +23,8 @@ public class ServerDecodeTest {
   public void setUp() {
     HydrologicalServer.create(vertx, new HydrologicalServerOptions().setPort(port))
     .endpointHandler(endpoint -> {
-      endpoint.timingMessageHandler(tMes -> {
-        System.out.println(tMes.toString());
+      endpoint.messageHandler(msg -> {
+        System.out.println(msg.toString());
       });
     }).listen();
   }
@@ -35,6 +35,8 @@ public class ServerDecodeTest {
     vertx.createNetClient().connect(port, "127.0.0.1")
     .onSuccess(so -> {
       so.handler(b -> {
+        System.out.print("接收到服务端响应：-> ");
+        System.out.println(ByteBufUtil.hexDump(b.getBytes()));
         byte[] addr = b.getBytes(2, 7);
         ctx.assertTrue(Arrays.equals(addr, new byte[]{0x37, 0x16, 0x02, 0x00, 0x04}));
         async.complete();

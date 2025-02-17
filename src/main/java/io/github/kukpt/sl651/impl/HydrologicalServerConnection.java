@@ -3,6 +3,7 @@ package io.github.kukpt.sl651.impl;
 import io.github.kukpt.sl651.HydrologicalEndpoint;
 import io.github.kukpt.sl651.HydrologicalServerOptions;
 import io.github.kukpt.sl651.codec.HydrologicalMessage;
+import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.vertx.core.Handler;
@@ -50,31 +51,33 @@ public class HydrologicalServerConnection {
 
       handleConnect(hydrologicalMessage);
 
-      switch (hydrologicalMessage.header().functionType()) {
-        case LINK_KEEP:
-          break;
-        case TEST:
-          this.handleTestMessage(hydrologicalMessage);
-          break;
-        case PERIOD:
-          this.handlePeriodMessage(hydrologicalMessage);
-          break;
-        case TIMING:
-          this.handlerTimingMessage(hydrologicalMessage);
-          break;
-        case ADDITIONAL:
-          this.handleAdditionalMessage(hydrologicalMessage);
-          break;
-        case HOURLY:
-          this.handleHourlyMessage(hydrologicalMessage);
-          break;
-        case PUMP_CONTROL:
-          this.handlePumpControl(hydrologicalMessage);
-          break;
-        default:
-          this.chctx.fireExceptionCaught(new Exception("Wrong message function type " + hydrologicalMessage.header().functionType()));
-          break;
-      }
+      handleMessage(hydrologicalMessage);
+
+//      switch (hydrologicalMessage.header().functionType()) {
+//        case LINK_KEEP:
+//          break;
+//        case TEST:
+//          this.handleTestMessage(hydrologicalMessage);
+//          break;
+//        case PERIOD:
+//          this.handlePeriodMessage(hydrologicalMessage);
+//          break;
+//        case TIMING:
+//          this.handlerTimingMessage(hydrologicalMessage);
+//          break;
+//        case ADDITIONAL:
+//          this.handleAdditionalMessage(hydrologicalMessage);
+//          break;
+//        case HOURLY:
+//          this.handleHourlyMessage(hydrologicalMessage);
+//          break;
+//        case PUMP_CONTROL:
+//          this.handlePumpControl(hydrologicalMessage);
+//          break;
+//        default:
+//          this.chctx.fireExceptionCaught(new Exception("Wrong message function type " + hydrologicalMessage.header().functionType()));
+//          break;
+//      }
 
     }
 
@@ -91,45 +94,10 @@ public class HydrologicalServerConnection {
     this.so.closeHandler(v -> this.endpoint.handleClose());
   }
 
-  void handlePumpControl(HydrologicalMessage message) {
+  void handleMessage(HydrologicalMessage message) {
     synchronized (this.so) {
       this.checkEndpoint();
-      this.endpoint.handlePumpStationControlResponseMessage(message);
-    }
-  }
-
-  void handleTestMessage(HydrologicalMessage message) {
-    synchronized (this.so) {
-      this.checkEndpoint();
-      this.endpoint.handleTestMessage(message);
-    }
-  }
-
-  void handlePeriodMessage(HydrologicalMessage message) {
-    synchronized (this.so) {
-      this.checkEndpoint();
-      this.endpoint.handlePeriodMessage(message);
-    }
-  }
-
-  void handlerTimingMessage(HydrologicalMessage message) {
-    synchronized (this.so) {
-      this.checkEndpoint();
-      this.endpoint.handleTimingMessage(message);
-    }
-  }
-
-  void handleAdditionalMessage(HydrologicalMessage message) {
-    synchronized (this.so) {
-      this.checkEndpoint();
-      this.endpoint.handleAdditionalMessage(message);
-    }
-  }
-
-  void handleHourlyMessage(HydrologicalMessage message) {
-    synchronized (this.so) {
-      this.checkEndpoint();
-      this.endpoint.handleHourlyMessage(message);
+      this.endpoint.handleMessage(message);
     }
   }
 

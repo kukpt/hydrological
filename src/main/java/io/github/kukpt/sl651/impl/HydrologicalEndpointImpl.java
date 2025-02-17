@@ -4,12 +4,29 @@ import io.github.kukpt.sl651.HydrologicalEndpoint;
 import io.github.kukpt.sl651.codec.*;
 import io.github.kukpt.sl651.utils.HydroLogicalUtils;
 import io.github.kukpt.sl651.utils.IdUtil;
+import io.netty.buffer.ByteBuf;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetSocketInternal;
 
+import java.util.concurrent.atomic.AtomicInteger;
+
 public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
+
+  private final AtomicInteger streamId = new AtomicInteger(0);
+
+  private void setStreamId(int id) {
+    synchronized (this.conn) {
+      this.streamId.set(id);
+    }
+  }
+
+  private int nextStreamId() {
+    synchronized (this.conn) {
+      return this.streamId.incrementAndGet();
+    }
+  }
 
   private final NetSocketInternal conn;
 
@@ -18,6 +35,8 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
   private final int protocolPassword;
 
   private final short centralStationAddress;
+
+  private Handler<HydrologicalMessage> messageHandler;
 
   private Handler<Throwable> exceptionHandler;
 
@@ -38,6 +57,10 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
   private boolean isClosed;
 
   private boolean isM2LinkMode = true;
+
+  private void initHandlers() {
+    this.messageHandler = msg -> {};
+  }
 
   public HydrologicalEndpointImpl(NetSocketInternal so, String endpointId, int protocolPassword, short centralStationAddress) {
     this.conn = so;
@@ -81,125 +104,138 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
     return isM2LinkMode;
   }
 
-  @Override
-  public HydrologicalEndpoint testMessageHandler(Handler<TestMessage> testMessageHandler) {
+
+  void handleMessage(HydrologicalMessage msg) {
     synchronized (this.conn) {
       checkClosed();
-      this.testMessageHandler = testMessageHandler;
-      return this;
-    }
-  }
-
-  void handleTestMessage(HydrologicalMessage msg) {
-    synchronized (this.conn) {
-      this.checkClosed();
-      if (this.testMessageHandler != null) {
-        this.testMessageHandler.handle((TestMessage) msg.payload());
+      if (this.messageHandler != null) {
+        this.messageHandler.handle(msg);
+        if (isM2LinkMode()) {
+          writeM2Ack(msg.header(), this.nextStreamId());
+        }
       }
     }
   }
 
   @Override
-  public HydrologicalEndpoint periodMessageHandler(Handler<PeriodMessage> periodMessageHandler) {
-    synchronized (this.conn) {
-      this.checkClosed();
-      this.periodMessageHandler = periodMessageHandler;
-      return this;
-    }
-  }
-
-  void handlePeriodMessage(HydrologicalMessage msg) {
-    synchronized (this.conn) {
-      this.checkClosed();
-      if (this.periodMessageHandler != null) {
-        this.periodMessageHandler.handle((PeriodMessage) msg.payload());
-      }
-    }
-  }
-
-  @Override
-  public HydrologicalEndpoint timingMessageHandler(Handler<TimingMessage> timingMessageHandler) {
-    synchronized (this.conn) {
-      this.checkClosed();
-      this.timingMessageHandler = timingMessageHandler;
-      return this;
-    }
-  }
-
-  void handleTimingMessage(HydrologicalMessage msg) {
-    synchronized (this.conn) {
-      this.checkClosed();
-      TimingMessage payload = (TimingMessage) msg.payload();
-      if (this.timingMessageHandler != null) {
-        this.timingMessageHandler.handle(payload);
-      }
-      if (isM2LinkMode()) {
-        this.writeM2Ack(msg.header(), payload.fixedBodyMessage().streamId());
-      }
-    }
-  }
-
-  @Override
-  public HydrologicalEndpoint additionalMessageHandler(Handler<AdditionalMessage> additionalMessageHandler) {
+  public HydrologicalEndpoint messageHandler(Handler<HydrologicalMessage> messageHandler) {
     synchronized (this.conn) {
       checkClosed();
-      this.additionalMessageHandler = additionalMessageHandler;
+      this.messageHandler = messageHandler;
       return this;
     }
   }
 
-  void handleAdditionalMessage(HydrologicalMessage msg) {
-    synchronized (this.conn) {
-      this.checkClosed();
-      if (this.additionalMessageHandler != null) {
-        this.additionalMessageHandler.handle((AdditionalMessage) msg.payload());
-      }
-    }
-  }
-
-  @Override
-  public HydrologicalEndpoint hourlyMessageHandler(Handler<HourlyMessage> hourlyMessageHandler) {
-    synchronized (this.conn) {
-      this.checkClosed();
-      this.hourlyMessageHandler = hourlyMessageHandler;
-      return this;
-    }
-  }
-
-  void handleHourlyMessage(HydrologicalMessage msg) {
-    synchronized (this.conn) {
-      this.checkClosed();
-      HourlyMessage payload = (HourlyMessage) msg.payload();
-      if (this.hourlyMessageHandler != null) {
-        this.hourlyMessageHandler.handle(payload);
-      }
-      if (isM2LinkMode()) {
-        this.writeM2Ack(msg.header(), payload.fixedBodyMessage().streamId());
-      }
-    }
-  }
-
-  @Override
-  public HydrologicalEndpoint pumpControlResponseHandler(Handler<PumpStationControlResponseMessage> pumpControlResponseHandler) {
-    synchronized (this.conn) {
-      this.checkClosed();
-      this.pumpStationControlResponseMessageHandler = pumpControlResponseHandler;
-      return this;
-    }
-  }
-
-  void handlePumpStationControlResponseMessage(HydrologicalMessage msg) {
-    synchronized (this.conn) {
-      this.checkClosed();
-      PumpStationControlResponseMessage payload = (PumpStationControlResponseMessage) msg.payload();
-      if (this.pumpStationControlResponseMessageHandler != null) {
-        this.pumpStationControlResponseMessageHandler.handle(payload);
-      }
-      if (isM2LinkMode()) {
-        this.writeM2Ack(msg.header(), payload.streamId());
-      }
-    }
-  }
+  //  void handleTestMessage(HydrologicalMessage msg) {
+//    synchronized (this.conn) {
+//      this.checkClosed();
+//      if (this.testMessageHandler != null) {
+//        this.testMessageHandler.handle((TestMessage) msg.payload());
+//      }
+//    }
+//  }
+//
+//  @Override
+//  public HydrologicalEndpoint periodMessageHandler(Handler<PeriodMessage> periodMessageHandler) {
+//    synchronized (this.conn) {
+//      this.checkClosed();
+//      this.periodMessageHandler = periodMessageHandler;
+//      return this;
+//    }
+//  }
+//
+//  void handlePeriodMessage(HydrologicalMessage msg) {
+//    synchronized (this.conn) {
+//      this.checkClosed();
+//      if (this.periodMessageHandler != null) {
+//        this.periodMessageHandler.handle((PeriodMessage) msg.payload());
+//      }
+//    }
+//  }
+//
+//  @Override
+//  public HydrologicalEndpoint timingMessageHandler(Handler<TimingMessage> timingMessageHandler) {
+//    synchronized (this.conn) {
+//      this.checkClosed();
+//      this.timingMessageHandler = timingMessageHandler;
+//      return this;
+//    }
+//  }
+//
+//  void handleTimingMessage(HydrologicalMessage msg) {
+//    synchronized (this.conn) {
+//      this.checkClosed();
+//      TimingMessage payload = (TimingMessage) msg.payload();
+//      if (this.timingMessageHandler != null) {
+//        this.timingMessageHandler.handle(payload);
+//      }
+//      if (isM2LinkMode()) {
+//        this.writeM2Ack(msg.header(), payload.fixedBodyMessage().streamId());
+//      }
+//    }
+//  }
+//
+//  @Override
+//  public HydrologicalEndpoint additionalMessageHandler(Handler<AdditionalMessage> additionalMessageHandler) {
+//    synchronized (this.conn) {
+//      checkClosed();
+//      this.additionalMessageHandler = additionalMessageHandler;
+//      return this;
+//    }
+//  }
+//
+//  void handleAdditionalMessage(HydrologicalMessage msg) {
+//    synchronized (this.conn) {
+//      this.checkClosed();
+//      if (this.additionalMessageHandler != null) {
+//        this.additionalMessageHandler.handle((AdditionalMessage) msg.payload());
+//      }
+//    }
+//  }
+//
+//  @Override
+//  public HydrologicalEndpoint hourlyMessageHandler(Handler<HourlyMessage> hourlyMessageHandler) {
+//    synchronized (this.conn) {
+//      this.checkClosed();
+//      this.hourlyMessageHandler = hourlyMessageHandler;
+//      return this;
+//    }
+//  }
+//
+//  void handleHourlyMessage(HydrologicalMessage msg) {
+//    synchronized (this.conn) {
+//      this.checkClosed();
+//      HourlyMessage payload = (HourlyMessage) msg.payload();
+//      if (this.hourlyMessageHandler != null) {
+//        this.hourlyMessageHandler.handle(payload);
+//      }
+//      if (isM2LinkMode()) {
+//        this.writeM2Ack(msg.header(), payload.fixedBodyMessage().streamId());
+//      }
+//    }
+//  }
+//
+//  @Override
+//  public HydrologicalEndpoint pumpControlResponseHandler(Handler<PumpStationControlResponseMessage> pumpControlResponseHandler) {
+//    synchronized (this.conn) {
+//      this.checkClosed();
+//      this.pumpStationControlResponseMessageHandler = pumpControlResponseHandler;
+//      return this;
+//    }
+//  }
+//
+//  void handlePumpStationControlResponseMessage(HydrologicalMessage msg) {
+//    synchronized (this.conn) {
+//      this.checkClosed();
+//      PumpStationControlResponseMessage payload = (PumpStationControlResponseMessage) msg.payload();
+//      if (this.pumpStationControlResponseMessageHandler != null) {
+//        this.pumpStationControlResponseMessageHandler.handle(payload);
+//      }
+//      if (isM2LinkMode()) {
+//        this.writeM2Ack(msg.header(), payload.streamId());
+//      }
+//    }
+//  }
 
   @Override
   public HydrologicalEndpoint closeHandler(Handler<Void> closeHandler) {
@@ -218,29 +254,29 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
     }
   }
 
-  /**
-   * 泵站控制
-   * @param tsAddr
-   * @param command 按照对应的数据位，0 关， 1 开。目前总共可以控制8路，实际可以拓展。
-   * @return
-   */
-  @Override
-  public Future<Integer> pumpStationControl(String tsAddr, short command) {
-    Integer streamId = IdUtil.nextId();
-    PumpStationControlContent content = new PumpStationControlContent(streamId, ReportTime.now(), (short) 1, command);
-    return this.downstreamQueryControl(tsAddr, FunctionType.PUMP_CONTROL, content).map(streamId);
-  }
-
-  /**
-   * 下行查询控制
-   * @return
-   */
-  Future<Void> downstreamQueryControl(String tsAddr, FunctionType type, DownstreamMessageContent content) {
-    MessageHeader header = new MessageHeader(centralStationAddress, tsAddr, protocolPassword, type, 0, (byte) HydroLogicalUtils.STX, 0, 0);
-    HydrologicalDownstreamMessage downstreamMessage = new HydrologicalDownstreamMessage(header, content,
-                                                                                        HydroLogicalUtils.ENQ);
-    return this.write(downstreamMessage);
-  }
+//  /**
+//   * 泵站控制
+//   * @param tsAddr
+//   * @param command 按照对应的数据位，0 关， 1 开。目前总共可以控制8路，实际可以拓展。
+//   * @return
+//   */
+//  @Override
+//  public Future<Integer> pumpStationControl(String tsAddr, short command) {
+//    Integer streamId = IdUtil.nextId();
+//    PumpStationControlContent content = new PumpStationControlContent(streamId, ReportTime.now(), (short) 1, command);
+//    return this.downstreamQueryControl(tsAddr, FunctionType.PUMP_CONTROL, content).map(streamId);
+//  }
+//
+//  /**
+//   * 下行查询控制
+//   * @return
+//   */
+//  Future<Void> downstreamQueryControl(String tsAddr, FunctionType type, DownstreamMessageContent content) {
+//    MessageHeader header = new MessageHeader(centralStationAddress, tsAddr, protocolPassword, type, 0, (byte) HydroLogicalUtils.STX, 0, 0);
+//    HydrologicalDownstreamMessage downstreamMessage = new HydrologicalDownstreamMessage(header, content,
+//                                                                                        HydroLogicalUtils.ENQ);
+//    return this.write(downstreamMessage);
+//  }
 
   void handleException(Throwable t) {
     synchronized (this.conn) {

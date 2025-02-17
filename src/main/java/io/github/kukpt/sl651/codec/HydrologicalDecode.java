@@ -21,14 +21,6 @@ import static io.github.kukpt.sl651.utils.HydroLogicalUtils.*;
 public class HydrologicalDecode extends ByteToMessageDecoder {
 
 
-  enum DecoderState {
-    HEADER,
-    BODY,
-    BAD_MESSAGE;
-
-    private DecoderState() {
-    }
-  }
 
   public HydrologicalDecode() {
 

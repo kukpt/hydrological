@@ -2,6 +2,7 @@ package io.github.kukpt.sl651.codec;
 
 
 import io.netty.buffer.ByteBuf;
+import io.netty.buffer.ByteBufUtil;
 import io.netty.handler.codec.DecoderResult;
 
 import static io.github.kukpt.sl651.utils.HydroLogicalUtils.ETB;
@@ -11,7 +12,7 @@ public class HydrologicalMessage {
 
   private final MessageHeader header;
 
-  private final ByteBuf payload;
+  private final HydrologicalPayload payload;
 
   private final DecoderResult coderResult;
 
@@ -22,7 +23,11 @@ public class HydrologicalMessage {
   }
 
   public ByteBuf payload() {
-    return payload;
+    if (header().multiPack()) {
+      return payload.mp().buffers();
+    } else {
+      return payload.sp();
+    }
   }
 
   public DecoderResult coderResult() {
@@ -34,7 +39,7 @@ public class HydrologicalMessage {
   }
 
 
-  HydrologicalMessage(MessageHeader header, ByteBuf payload, DecoderResult coderResult, short frameEnd) {
+  HydrologicalMessage(MessageHeader header, HydrologicalPayload payload, DecoderResult coderResult, short frameEnd) {
     this.header = header;
     this.payload = payload;
     this.coderResult = coderResult;
@@ -45,7 +50,9 @@ public class HydrologicalMessage {
   public String toString() {
     final StringBuilder sb = new StringBuilder("HydrologicalMessage{");
     sb.append("header=").append(header);
-    sb.append(", payload=").append(payload);
+    byte[] bs = new byte[this.payload().readableBytes()];
+    this.payload().getBytes(0, bs);
+    sb.append(", payload=").append(ByteBufUtil.hexDump(bs));
     sb.append('}');
     return sb.toString();
   }

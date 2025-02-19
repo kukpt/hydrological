@@ -24,6 +24,7 @@ public class ServerDecodeTest {
     HydrologicalServer.create(vertx, new HydrologicalServerOptions().setPort(port))
     .endpointHandler(endpoint -> {
       endpoint.messageHandler(msg -> {
+
         System.out.println(msg.toString());
       });
     }).listen();

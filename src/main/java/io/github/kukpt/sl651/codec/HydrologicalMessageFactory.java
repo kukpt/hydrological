@@ -11,7 +11,7 @@ public class HydrologicalMessageFactory {
     return new HydrologicalDownstreamMessage(header, new M2LinkModeAckMessage(streamId), HydroLogicalUtils.EOT);
   }
 
-  public static HydrologicalMessage newMessage(MessageHeader header, ByteBuf payload, short frameEnd, int crcCode) {
+  public static HydrologicalMessage newMessage(MessageHeader header, HydrologicalPayload payload, short frameEnd, int crcCode) {
     return new HydrologicalMessage(header, payload, DecoderResult.SUCCESS, frameEnd);
   }
 

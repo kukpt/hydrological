@@ -28,6 +28,12 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
 
   private MessageHeader header;
 
+  private MultiPack mp;
+
+  private boolean isEtx(short frameEnd) {
+    return ETX == frameEnd;
+  }
+
   @Override
   protected void decode(
   ChannelHandlerContext channelHandlerContext, ByteBuf byteBuf, List<Object> out) throws Exception {
@@ -37,13 +43,25 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
       }
       header = decodeHeader(byteBuf);
       int remainingLength = header.remainingLength();
+      HydrologicalPayload hp;
+      if (header.multiPack()) {
+        mp = new MultiPack(header.totalPackage());
+        ByteBuf payload = byteBuf.readBytes(remainingLength);
+        mp.addPack(header.currentPackage(), payload);
+        hp = new HydrologicalPayload(mp);
+      } else {
+        ByteBuf payload = byteBuf.readBytes(remainingLength);
+        hp = new HydrologicalPayload(payload);
+      }
 
-      ByteBuf payload = byteBuf.readBytes(remainingLength);
       short frameEnd = byteBuf.readUnsignedByte();
       int crcCode = byteBuf.readUnsignedShort();
 
-      HydrologicalMessage msg = HydrologicalMessageFactory.newMessage(header, payload, frameEnd, crcCode);
-      out.add(msg);
+      if (isEtx(frameEnd)) {
+        HydrologicalMessage msg = HydrologicalMessageFactory.newMessage(header, hp, frameEnd, crcCode);
+        out.add(msg);
+      }
+
 
 //      // 链路维持报
 //      if (LINK_KEEP.equals(header.functionType())) {

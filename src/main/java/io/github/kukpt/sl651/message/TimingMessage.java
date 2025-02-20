@@ -1,0 +1,31 @@
+package io.github.kukpt.sl651.message;
+
+import io.github.kukpt.sl651.codec.ElementResult;
+import io.github.kukpt.sl651.codec.PayloadDecode;
+import io.netty.buffer.ByteBuf;
+
+import java.util.Collection;
+
+public class TimingMessage extends FixedBodyMessage {
+
+  private final Collection<ElementResult> elementResults;
+
+  public TimingMessage(ByteBuf buffer) {
+    super(buffer);
+    this.elementResults = PayloadDecode.decodeDefaultElementResults(buffer);
+  }
+
+
+
+  public Collection<ElementResult> elementResults() {
+    return elementResults;
+  }
+
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("TimingMessage{");
+    sb.append(", elementResults=").append(elementResults);
+    sb.append('}');
+    return sb.toString();
+  }
+}

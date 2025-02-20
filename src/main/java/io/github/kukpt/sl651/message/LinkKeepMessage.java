@@ -1,5 +1,6 @@
-package io.github.kukpt.sl651.codec;
+package io.github.kukpt.sl651.message;
 
+import io.github.kukpt.sl651.codec.ReportTime;
 
 public class LinkKeepMessage {
 

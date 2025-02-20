@@ -1,5 +1,6 @@
 package io.github.kukpt.sl651.codec;
 
+import io.github.kukpt.sl651.message.*;
 import io.github.kukpt.sl651.utils.HydroLogicalUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
@@ -13,8 +14,6 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-import static io.github.kukpt.sl651.codec.FunctionType.LINK_KEEP;
-import static io.github.kukpt.sl651.codec.FunctionType.PUMP_CONTROL;
 import static io.github.kukpt.sl651.utils.HydroLogicalUtils.*;
 
 
@@ -131,7 +130,6 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
     int password = byteBuf.readUnsignedShort();
     // 功能码
     int funCode = byteBuf.readUnsignedByte();
-    FunctionType ft = FunctionType.valueOf(funCode);
     // 长度
     short len = byteBuf.readShort();
     if (len < 0 || len > 4095) {
@@ -146,24 +144,24 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
       int packages = bb.getInt();
       int currentPackage = packages & 0xFFF;
       int totalPackage = packages >>> 12;
-      return new MessageHeader(cAddr, tAddr, password, ft, len, frameStart, currentPackage, totalPackage);
+      return new MessageHeader(cAddr, tAddr, password, funCode, len, frameStart, currentPackage, totalPackage);
     }
-    return new MessageHeader(cAddr, tAddr, password, ft, len, frameStart, 0, 0);
+    return new MessageHeader(cAddr, tAddr, password, funCode, len, frameStart, 0, 0);
   }
 
 
   private static Result<?> decodeBody(FunctionType functionType, FixedBodyMessage fixedBodyMessage, ByteBuf byteBuf) {
     switch (functionType) {
-      case TEST:
-        return decodeTestMessage(byteBuf, fixedBodyMessage);
-      case PERIOD:
-        return decodePeriod(byteBuf, fixedBodyMessage);
-      case TIMING:
-        return decodeTiming(byteBuf, fixedBodyMessage);
-      case ADDITIONAL:
-        return decodeAdditional(byteBuf, fixedBodyMessage);
-      case HOURLY:
-        return decodeHourlyMessage(byteBuf, fixedBodyMessage);
+//      case TEST:
+//        return decodeTestMessage(byteBuf, fixedBodyMessage);
+//      case PERIOD:
+//        return decodePeriod(byteBuf, fixedBodyMessage);
+//      case TIMING:
+//        return decodeTiming(byteBuf, fixedBodyMessage);
+//      case ADDITIONAL:
+//        return decodeAdditional(byteBuf, fixedBodyMessage);
+//      case HOURLY:
+//        return decodeHourlyMessage(byteBuf, fixedBodyMessage);
       default:
         throw new DecoderException("Unknown message type, do not know how to validate the body");
     }
@@ -187,47 +185,47 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
     return new Result<>(message, numberOfBytesConsumed);
   }
 
-  private static Result<TestMessage> decodeTestMessage(ByteBuf byteBuf, FixedBodyMessage fixedBodyMessage) {
-    Result<Collection<ElementResult>> collectionResult = decodeDefaultElementResults(byteBuf);
-    final TestMessage message = new TestMessage(fixedBodyMessage,
-                                                collectionResult.value);
-    return new Result<>(message, collectionResult.numberOfBytesConsumed);
-  }
+//  private static Result<TestMessage> decodeTestMessage(ByteBuf byteBuf, FixedBodyMessage fixedBodyMessage) {
+//    Result<Collection<ElementResult>> collectionResult = decodeDefaultElementResults(byteBuf);
+//    final TestMessage message = new TestMessage(fixedBodyMessage,
+//                                                collectionResult.value);
+//    return new Result<>(message, collectionResult.numberOfBytesConsumed);
+//  }
 
-  private static Result<PeriodMessage> decodePeriod(ByteBuf byteBuf, FixedBodyMessage fixedBodyMessage) {
+//  private static Result<PeriodMessage> decodePeriod(ByteBuf byteBuf, FixedBodyMessage fixedBodyMessage) {
+//
+//    byteBuf.skipBytes(2);
+//    TimeStep timeStep = TimeStep.createTimeStep(byteBuf);
+//    ElementId elementId = decodeElementId(byteBuf);
+//    int numberOfBytesConsumed = 5 + elementId.consumed();
+//    Collection<ElementResult> elementResults = new ArrayList<>();
+//    while (ETX != byteBuf.getByte(byteBuf.readerIndex())
+//    || byteBuf.readableBytes() > 3) {
+//      ElementResult elementResult = decodeElement(byteBuf, elementId);
+//      numberOfBytesConsumed += elementId.readLength();
+//      elementResults.add(elementResult);
+//    }
+//    PeriodMessage message = new PeriodMessage(fixedBodyMessage, timeStep, elementId, elementResults);
+//    return new Result<>(message, numberOfBytesConsumed);
+//  }
+//
+//  private static Result<TimingMessage> decodeTiming(ByteBuf byteBuf, FixedBodyMessage fixedBodyMessage) {
+//    Result<Collection<ElementResult>> collectionResult = decodeDefaultElementResults(byteBuf);
+//    final TimingMessage message = new TimingMessage(fixedBodyMessage, collectionResult.value);
+//    return new Result<>(message, collectionResult.numberOfBytesConsumed);
+//  }
+//
+//  private static Result<AdditionalMessage> decodeAdditional(ByteBuf byteBuf, FixedBodyMessage fixedBodyMessage) {
+//    Result<Collection<ElementResult>> collectionResult = decodeDefaultElementResults(byteBuf);
+//    final AdditionalMessage message = new AdditionalMessage(fixedBodyMessage, collectionResult.value);
+//    return new Result<>(message, collectionResult.numberOfBytesConsumed);
+//  }
 
-    byteBuf.skipBytes(2);
-    TimeStep timeStep = TimeStep.createTimeStep(byteBuf);
-    ElementId elementId = decodeElementId(byteBuf);
-    int numberOfBytesConsumed = 5 + elementId.consumed();
-    Collection<ElementResult> elementResults = new ArrayList<>();
-    while (ETX != byteBuf.getByte(byteBuf.readerIndex())
-    || byteBuf.readableBytes() > 3) {
-      ElementResult elementResult = decodeElement(byteBuf, elementId);
-      numberOfBytesConsumed += elementId.readLength();
-      elementResults.add(elementResult);
-    }
-    PeriodMessage message = new PeriodMessage(fixedBodyMessage, timeStep, elementId, elementResults);
-    return new Result<>(message, numberOfBytesConsumed);
-  }
-
-  private static Result<TimingMessage> decodeTiming(ByteBuf byteBuf, FixedBodyMessage fixedBodyMessage) {
-    Result<Collection<ElementResult>> collectionResult = decodeDefaultElementResults(byteBuf);
-    final TimingMessage message = new TimingMessage(fixedBodyMessage, collectionResult.value);
-    return new Result<>(message, collectionResult.numberOfBytesConsumed);
-  }
-
-  private static Result<AdditionalMessage> decodeAdditional(ByteBuf byteBuf, FixedBodyMessage fixedBodyMessage) {
-    Result<Collection<ElementResult>> collectionResult = decodeDefaultElementResults(byteBuf);
-    final AdditionalMessage message = new AdditionalMessage(fixedBodyMessage, collectionResult.value);
-    return new Result<>(message, collectionResult.numberOfBytesConsumed);
-  }
-
-  private static Result<HourlyMessage> decodeHourlyMessage(ByteBuf byteBuf, FixedBodyMessage fixedBodyMessage) {
-    Result<Collection<ElementResult>> collectionResult = decodeDefaultElementResults(byteBuf);
-    final HourlyMessage hourlyMessage = new HourlyMessage(fixedBodyMessage, collectionResult.value);
-    return new Result<>(hourlyMessage, collectionResult.numberOfBytesConsumed);
-  }
+//  private static Result<HourlyMessage> decodeHourlyMessage(ByteBuf byteBuf, FixedBodyMessage fixedBodyMessage) {
+//    Result<Collection<ElementResult>> collectionResult = decodeDefaultElementResults(byteBuf);
+//    final HourlyMessage hourlyMessage = new HourlyMessage(fixedBodyMessage, collectionResult.value);
+//    return new Result<>(hourlyMessage, collectionResult.numberOfBytesConsumed);
+//  }
 
   private static Result<Collection<ElementResult>> decodeDefaultElementResults(ByteBuf byteBuf) {
     int numberOfBytesConsumed = 0;
@@ -243,17 +241,17 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
     return new Result<>(elementResults, numberOfBytesConsumed);
   }
 
-  private static Result<FixedBodyMessage> decodeFixedBodyMessage(ByteBuf byteBuf) {
-    int streamId = byteBuf.readUnsignedShort();// stream id
-    ReportTime reportTime = HydroLogicalUtils.readReportTimeStr(byteBuf);
-    String stationAddr = HydroLogicalUtils.readTelemetryStationAddressSkipElementId(byteBuf);
-    short classificationCode = byteBuf.readUnsignedByte();// 分类码
-    ObservationTime observationTime = HydroLogicalUtils.readObservationTimeSkipElementId(byteBuf);
-    int numberOfBytesConsumed = 2 + 6 + 7 + 1 + 7;
-    FixedBodyMessage fixedBodyMessage = new FixedBodyMessage(streamId, reportTime, stationAddr, classificationCode,
-                                                             observationTime);
-    return new Result<>(fixedBodyMessage, numberOfBytesConsumed);
-  }
+//  private static Result<FixedBodyMessage> decodeFixedBodyMessage(ByteBuf byteBuf) {
+//    int streamId = byteBuf.readUnsignedShort();// stream id
+//    ReportTime reportTime = HydroLogicalUtils.readReportTimeStr(byteBuf);
+//    String stationAddr = HydroLogicalUtils.readTelemetryStationAddressSkipElementId(byteBuf);
+//    short classificationCode = byteBuf.readUnsignedByte();// 分类码
+//    ObservationTime observationTime = HydroLogicalUtils.readObservationTimeSkipElementId(byteBuf);
+//    int numberOfBytesConsumed = 2 + 6 + 7 + 1 + 7;
+//    FixedBodyMessage fixedBodyMessage = new FixedBodyMessage(streamId, reportTime, stationAddr, classificationCode,
+//                                                             observationTime);
+//    return new Result<>(fixedBodyMessage, numberOfBytesConsumed);
+//  }
 
 
   private static ElementResult decodeElement(ByteBuf byteBuf, ElementId elementId) {

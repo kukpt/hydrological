@@ -1,4 +1,9 @@
-package io.github.kukpt.sl651.codec;
+package io.github.kukpt.sl651.message;
+
+import io.github.kukpt.sl651.codec.ObservationTime;
+import io.github.kukpt.sl651.codec.ReportTime;
+import io.github.kukpt.sl651.utils.HydroLogicalUtils;
+import io.netty.buffer.ByteBuf;
 
 public class FixedBodyMessage {
   public int streamId() {
@@ -34,14 +39,12 @@ public class FixedBodyMessage {
 
   private final ObservationTime observationTime;
 
-  FixedBodyMessage(
-    int streamId, ReportTime reportTime, String telemetryStationAddress, int classificationCode,
-    ObservationTime observationTime) {
-    this.streamId = streamId;
-    this.reportTime = reportTime;
-    this.telemetryStationAddress = telemetryStationAddress;
-    this.classificationCode = classificationCode;
-    this.observationTime = observationTime;
+  public FixedBodyMessage(ByteBuf byteBuf) {
+    this.streamId = byteBuf.readUnsignedShort();// stream id
+    this.reportTime = HydroLogicalUtils.readReportTimeStr(byteBuf);
+    this.telemetryStationAddress = HydroLogicalUtils.readTelemetryStationAddressSkipElementId(byteBuf);
+    this.classificationCode = byteBuf.readUnsignedByte();// 分类码
+    this.observationTime = HydroLogicalUtils.readObservationTimeSkipElementId(byteBuf);
   }
 
   @Override

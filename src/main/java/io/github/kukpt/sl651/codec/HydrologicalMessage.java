@@ -1,9 +1,13 @@
 package io.github.kukpt.sl651.codec;
 
 
+import io.github.kukpt.sl651.message.AdditionalMessage;
+import io.github.kukpt.sl651.message.TimingMessage;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.handler.codec.DecoderResult;
+
+import java.util.function.Function;
 
 import static io.github.kukpt.sl651.utils.HydroLogicalUtils.ETB;
 
@@ -17,6 +21,22 @@ public class HydrologicalMessage {
   private final DecoderResult coderResult;
 
   private final short frameEnd;
+
+  public TimingMessage timingPayload() {
+    return new TimingMessage(this.payload());
+  }
+
+  public AdditionalMessage additionalPayload() {
+    return new AdditionalMessage(this.payload());
+  }
+
+  public int functionType() {
+    return header.functionType();
+  }
+
+  public String telemetryStationAddress() {
+    return header.telemetryStationAddress();
+  }
 
   public MessageHeader header() {
     return header;

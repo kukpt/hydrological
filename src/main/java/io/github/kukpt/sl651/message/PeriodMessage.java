@@ -1,5 +1,9 @@
-package io.github.kukpt.sl651.codec;
+package io.github.kukpt.sl651.message;
 
+
+import io.github.kukpt.sl651.codec.ElementId;
+import io.github.kukpt.sl651.codec.ElementResult;
+import io.github.kukpt.sl651.codec.TimeStep;
 
 import java.util.Collection;
 
@@ -15,7 +19,7 @@ public class PeriodMessage {
 
   private final ElementId elementId;
 
-  PeriodMessage(FixedBodyMessage fixedBodyMessage, TimeStep timeStep, ElementId elementId, Collection<ElementResult> elementResults) {
+  public PeriodMessage(FixedBodyMessage fixedBodyMessage, TimeStep timeStep, ElementId elementId, Collection<ElementResult> elementResults) {
     this.fixedBodyMessage = fixedBodyMessage;
     this.elementResults = elementResults;
     this.timeStep = timeStep;

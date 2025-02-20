@@ -16,7 +16,7 @@ public class MessageHeader {
     buf.writeBytes(tStationAddr);
     buf.writeByte(centralStationAddress);
     buf.writeShort(password);
-    buf.writeByte(functionType().value());
+    buf.writeByte(functionType);
     buf.writeShort(0x8000 | bodyLen);
     buf.writeByte(STX);
 
@@ -26,7 +26,7 @@ public class MessageHeader {
   public MessageHeader(short centralStationAddress,
                        String telemetryStationAddress,
                        int password,
-                       FunctionType functionType,
+                       int functionType,
                        int remainingLength,
                        short frameStart,
                        int totalLength,
@@ -34,7 +34,7 @@ public class MessageHeader {
     this.centralStationAddress = centralStationAddress;
     this.telemetryStationAddress = ObjectUtil.checkNotNull(telemetryStationAddress, "遥测站地址");
     this.password = password;
-    this.functionType = ObjectUtil.checkNotNull(functionType, "functionType");
+    this.functionType = functionType;
     this.remainingLength = remainingLength;
     this.frameStart = frameStart;
     this.totalPackage = totalLength;
@@ -59,7 +59,7 @@ public class MessageHeader {
   /**
    * 功能代码
    */
-  private FunctionType functionType;
+  private int functionType;
 
   /**
    * 报文长度
@@ -93,7 +93,7 @@ public class MessageHeader {
     return password;
   }
 
-  public FunctionType functionType() {
+  public int functionType() {
     return functionType;
   }
 

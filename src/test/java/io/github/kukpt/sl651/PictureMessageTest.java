@@ -1,6 +1,6 @@
 package io.github.kukpt.sl651;
 
-import io.github.kukpt.sl651.message.TimingMessage;
+import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -14,7 +14,7 @@ import org.junit.runner.RunWith;
 import java.util.Arrays;
 
 @RunWith(VertxUnitRunner.class)
-public class ServerDecodeTest extends ServerDecodeBase {
+public class PictureMessageTest extends ServerDecodeBase{
 
   @Before
   public void before(TestContext context) {
@@ -30,6 +30,27 @@ public class ServerDecodeTest extends ServerDecodeBase {
 
   }
 
+  @Test
+  public void readPicture(TestContext ctx) {
+    Async async = ctx.async();
+    vertx.fileSystem().readFile("D:\\test.jpg")
+    .onSuccess(b -> {
+      ByteBuf byteBuf = b.getByteBuf();
+      int len = byteBuf.readableBytes();
+      int i = len / 1000;
+      for (int j = 0; j < i; j++) {
+
+      }
+
+    });
+  }
+
+  private void taa() {
+    int st = 0x7e7e;
+
+    String a = "7E7E640066666666C05036";
+  }
+
   @Test(timeout = 3_000L)
   public void test(TestContext ctx) {
     Async async = ctx.async();
@@ -41,12 +62,12 @@ public class ServerDecodeTest extends ServerDecodeBase {
       async.complete();
     };
     super.connect(h)
-    .onSuccess(so -> {
-      String msg = "7e7e01ccd7000085c05032003a02008c000101000015f1f1ccd700008548f0f00001010000272b000000000076280000000000361b0000003923000000004520000000033812122503b140";
-      byte[] bytes = ByteBufUtil.decodeHexDump(msg, 0, msg.length());
-      Buffer buffer = Buffer.buffer(bytes);
-      so.write(buffer);
-    });
+         .onSuccess(so -> {
+           String msg = "7e7e01ccd7000085c05032003a02008c000101000015f1f1ccd700008548f0f00001010000272b000000000076280000000000361b0000003923000000004520000000033812122503b140";
+           byte[] bytes = ByteBufUtil.decodeHexDump(msg, 0, msg.length());
+           Buffer buffer = Buffer.buffer(bytes);
+           so.write(buffer);
+         });
   }
 
 }

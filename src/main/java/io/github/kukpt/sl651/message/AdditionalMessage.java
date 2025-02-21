@@ -1,24 +1,22 @@
 package io.github.kukpt.sl651.message;
 
-import io.github.kukpt.sl651.codec.ElementResult;
-import io.github.kukpt.sl651.codec.PayloadDecode;
+import io.github.kukpt.sl651.codec.element.ElementDecodeUtils;
+import io.github.kukpt.sl651.codec.element.ElementResult;
 import io.netty.buffer.ByteBuf;
 
 import java.util.Collection;
 
 public class AdditionalMessage extends FixedBodyMessage {
 
-
   public Collection<ElementResult> elementResults() {
     return elementResults;
   }
-
 
   private final Collection<ElementResult> elementResults;
 
   public AdditionalMessage(ByteBuf buffer) {
     super(buffer);
-    this.elementResults = PayloadDecode.decodeDefaultElementResults(buffer);
+    this.elementResults = ElementDecodeUtils.decodeDefaultElementResults(buffer);
   }
 
   @Override

@@ -7,7 +7,7 @@ import io.netty.buffer.Unpooled;
 /**
  * 泵站控制
  */
-public class PumpStationControlContent implements DownstreamMessageContent{
+public class PumpStationControlContent implements DownstreamMessagePayload{
 
   public PumpStationControlContent(int streamId, ReportTime reportTime, short length, short command){
     this.streamId = streamId;

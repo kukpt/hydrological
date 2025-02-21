@@ -1,15 +1,16 @@
 package io.github.kukpt.sl651.codec;
 
+import io.github.kukpt.sl651.utils.CRC16;
 import io.netty.buffer.ByteBuf;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.MessageToMessageEncoder;
 
 import java.util.List;
 
-public class HydrologicalEncode extends MessageToMessageEncoder<HydrologicalDownstreamMessage> {
+public class HydrologicalEncode extends MessageToMessageEncoder<DownstreamMessage> {
 
   @Override
-  protected void encode(ChannelHandlerContext ctx, HydrologicalDownstreamMessage downstreamMessage, List<Object> out) throws Exception {
+  protected void encode(ChannelHandlerContext ctx, DownstreamMessage downstreamMessage, List<Object> out) throws Exception {
     ByteBuf buf = ctx.alloc().buffer();
     ByteBuf bodyBuf = downstreamMessage.content().getByteBuf();
     ByteBuf headerBuf = downstreamMessage.messageHeader().downstreamBuf(bodyBuf.readableBytes());

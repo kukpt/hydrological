@@ -1,7 +1,6 @@
 package io.github.kukpt.sl651;
 
 import io.github.kukpt.sl651.codec.*;
-import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.net.SocketAddress;
 
@@ -17,7 +16,7 @@ public interface HydrologicalEndpoint {
 
   String endpointId();
 
-  HydrologicalEndpoint messageHandler(Handler<HydrologicalMessage> messageHandler);
+  HydrologicalEndpoint messageHandler(Handler<UpstreamMessage> messageHandler);
 
   HydrologicalEndpoint closeHandler(Handler<Void> closeHandler);
 

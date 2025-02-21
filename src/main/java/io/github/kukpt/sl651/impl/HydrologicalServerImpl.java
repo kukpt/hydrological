@@ -40,8 +40,9 @@ public class HydrologicalServerImpl implements HydrologicalServer {
 
 
   private void initChannel(ChannelPipeline pipeline) {
-    // the SL651-2014 max frame length is 0xFFF
-    pipeline.addBefore("handler", "frame-decode", new LengthFieldBasedFrameDecoder(0xfff, 11, 2, 4, 0));
+    // the SL651-2014 M2 max frame length is 0xFFF
+    // M3 max frame length is 0xFFFF
+    pipeline.addBefore("handler", "frame-decode", new LengthFieldBasedFrameDecoder(0xFFFF, 11, 2, 4, 0));
     pipeline.addBefore("handler", "hydrological-encode", new HydrologicalEncode());
     pipeline.addBefore("handler", "hydrological-decode", new HydrologicalDecode());
     pipeline.addBefore("handler", "idle", new IdleStateHandler(options.getTimeoutOnConnect(), 0, 0));

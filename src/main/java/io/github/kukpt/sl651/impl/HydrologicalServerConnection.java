@@ -2,8 +2,7 @@ package io.github.kukpt.sl651.impl;
 
 import io.github.kukpt.sl651.HydrologicalEndpoint;
 import io.github.kukpt.sl651.HydrologicalServerOptions;
-import io.github.kukpt.sl651.codec.HydrologicalMessage;
-import io.netty.buffer.ByteBuf;
+import io.github.kukpt.sl651.codec.UpstreamMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.vertx.core.Handler;
@@ -37,8 +36,8 @@ public class HydrologicalServerConnection {
 
   void handleMsg(Object msg) {
 
-    if (msg instanceof HydrologicalMessage) {
-      HydrologicalMessage hydrologicalMessage = (HydrologicalMessage) msg;
+    if (msg instanceof UpstreamMessage) {
+      UpstreamMessage hydrologicalMessage = (UpstreamMessage) msg;
       DecoderResult decoderResult = hydrologicalMessage.coderResult();
       if (decoderResult.isFailure()) {
         chctx.pipeline().fireExceptionCaught(decoderResult.cause());
@@ -83,7 +82,7 @@ public class HydrologicalServerConnection {
 
   }
 
-  void handleConnect(HydrologicalMessage message) {
+  void handleConnect(UpstreamMessage message) {
     if (endpoint != null) {
       return;
     }
@@ -94,7 +93,7 @@ public class HydrologicalServerConnection {
     this.so.closeHandler(v -> this.endpoint.handleClose());
   }
 
-  void handleMessage(HydrologicalMessage message) {
+  void handleMessage(UpstreamMessage message) {
     synchronized (this.so) {
       this.checkEndpoint();
       this.endpoint.handleMessage(message);

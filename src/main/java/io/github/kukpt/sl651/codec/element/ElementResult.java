@@ -1,4 +1,4 @@
-package io.github.kukpt.sl651.codec;
+package io.github.kukpt.sl651.codec.element;
 
 public class ElementResult {
 

@@ -4,7 +4,7 @@ import io.github.kukpt.sl651.utils.HydroLogicalUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-public class M2LinkModeAckMessage implements DownstreamMessageContent{
+public class M2LinkModeAckMessage implements DownstreamMessagePayload{
 
   private final int streamId;
 

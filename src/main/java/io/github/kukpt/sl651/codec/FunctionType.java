@@ -17,7 +17,7 @@ public enum FunctionType {
     return value - 0x2E;
   }
 
-  private final int value;
+  public final int value;
 
   private static final FunctionType[] VALUES;
 

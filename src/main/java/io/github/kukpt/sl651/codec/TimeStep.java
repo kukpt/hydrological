@@ -5,7 +5,7 @@ import io.netty.buffer.ByteBuf;
 
 public class TimeStep {
 
-  static TimeStep createTimeStep(ByteBuf byteBuf) {
+  public static TimeStep createTimeStep(ByteBuf byteBuf) {
     byte[] timeStepBytes = new byte[3];
     byteBuf.readBytes(timeStepBytes);
     return new TimeStep(timeStepBytes);

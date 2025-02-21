@@ -1,16 +1,23 @@
 package io.github.kukpt.sl651.impl;
 
 import io.github.kukpt.sl651.HydrologicalEndpoint;
+import io.github.kukpt.sl651.ReplyPromise;
 import io.github.kukpt.sl651.codec.*;
-import io.github.kukpt.sl651.message.*;
+import io.github.kukpt.sl651.utils.HydroLogicalUtils;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetSocketInternal;
 
+import java.util.HashMap;
+import java.util.Map;
+import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
+
+  private final ReplyPromise reply = new ReplyPromise();
 
   private final AtomicInteger streamId = new AtomicInteger(0);
 
@@ -34,33 +41,23 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
 
   private final short centralStationAddress;
 
-  private Handler<HydrologicalMessage> messageHandler;
+  private Handler<UpstreamMessage> messageHandler;
 
   private Handler<Throwable> exceptionHandler;
 
   private Handler<Void> closeHandler;
-
-  private Handler<TestMessage> testMessageHandler;
-
-  private Handler<PeriodMessage> periodMessageHandler;
-
-  private Handler<TimingMessage> timingMessageHandler;
-
-  private Handler<AdditionalMessage> additionalMessageHandler;
-
-  private Handler<HourlyMessage> hourlyMessageHandler;
-
-  private Handler<PumpStationControlResponseMessage> pumpStationControlResponseMessageHandler;
 
   private boolean isClosed;
 
   private boolean isM2LinkMode = true;
 
   private void initHandlers() {
-    this.messageHandler = msg -> {};
+    this.messageHandler = msg -> {
+    };
   }
 
-  public HydrologicalEndpointImpl(NetSocketInternal so, String endpointId, int protocolPassword, short centralStationAddress) {
+  public HydrologicalEndpointImpl(
+  NetSocketInternal so, String endpointId, int protocolPassword, short centralStationAddress) {
     this.conn = so;
     this.endpointId = endpointId;
     this.protocolPassword = protocolPassword;
@@ -103,20 +100,24 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
   }
 
 
-  void handleMessage(HydrologicalMessage msg) {
+  void handleMessage(UpstreamMessage msg) {
     synchronized (this.conn) {
       checkClosed();
+      reply.setReply(msg);
       if (this.messageHandler != null) {
         this.messageHandler.handle(msg);
-        if (isM2LinkMode()) {
-          writeM2Ack(msg.header(), this.nextStreamId());
+      }
+      if (isM2LinkMode()) {
+        if (msg.header().isLinkKeep()) {
+          return;
         }
+        writeM2Ack(msg.header(), this.nextStreamId());
       }
     }
   }
 
   @Override
-  public HydrologicalEndpoint messageHandler(Handler<HydrologicalMessage> messageHandler) {
+  public HydrologicalEndpoint messageHandler(Handler<UpstreamMessage> messageHandler) {
     synchronized (this.conn) {
       checkClosed();
       this.messageHandler = messageHandler;
@@ -214,7 +215,8 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
 //  }
 //
 //  @Override
-//  public HydrologicalEndpoint pumpControlResponseHandler(Handler<PumpStationControlResponseMessage> pumpControlResponseHandler) {
+//  public HydrologicalEndpoint pumpControlResponseHandler(Handler<PumpStationControlResponseMessage>
+//  pumpControlResponseHandler) {
 //    synchronized (this.conn) {
 //      this.checkClosed();
 //      this.pumpStationControlResponseMessageHandler = pumpControlResponseHandler;
@@ -270,7 +272,8 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
 //   * @return
 //   */
 //  Future<Void> downstreamQueryControl(String tsAddr, FunctionType type, DownstreamMessageContent content) {
-//    MessageHeader header = new MessageHeader(centralStationAddress, tsAddr, protocolPassword, type, 0, (byte) HydroLogicalUtils.STX, 0, 0);
+//    MessageHeader header = new MessageHeader(centralStationAddress, tsAddr, protocolPassword, type, 0, (byte)
+//    HydroLogicalUtils.STX, 0, 0);
 //    HydrologicalDownstreamMessage downstreamMessage = new HydrologicalDownstreamMessage(header, content,
 //                                                                                        HydroLogicalUtils.ENQ);
 //    return this.write(downstreamMessage);
@@ -294,13 +297,19 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
     }
   }
 
+  Future<UpstreamMessage> request(DownstreamMessage dMsg, long timeout) {
+    int ft = dMsg.functionType();
+    return write(dMsg).compose(unused ->
+                               reply.setPromise(ft).future().timeout(timeout, TimeUnit.SECONDS));
+  }
+
   Future<Void> writeM2Ack(MessageHeader header, int streamId) {
-    HydrologicalDownstreamMessage m2Ack = HydrologicalMessageFactory.createM2Ack(header, streamId);
+    DownstreamMessage m2Ack = HydrologicalMessageFactory.createM2Ack(header, streamId);
     return this.write(m2Ack);
   }
 
 
-  Future<Void> write(HydrologicalDownstreamMessage downstreamMessage) {
+  Future<Void> write(DownstreamMessage downstreamMessage) {
     synchronized (this.conn) {
       this.checkClosed();
       return this.conn.writeMessage(downstreamMessage);

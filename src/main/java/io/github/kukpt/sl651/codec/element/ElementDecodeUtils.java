@@ -1,7 +1,6 @@
-package io.github.kukpt.sl651.codec;
+package io.github.kukpt.sl651.codec.element;
 
-import io.github.kukpt.sl651.message.FixedBodyMessage;
-import io.github.kukpt.sl651.message.TimingMessage;
+import io.github.kukpt.sl651.codec.TimeStep;
 import io.github.kukpt.sl651.utils.HydroLogicalUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderException;
@@ -11,17 +10,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
-public final class PayloadDecode {
 
-  public static FixedBodyMessage decodeFixedBodyMessage(final ByteBuf byteBuf) {
-    return new FixedBodyMessage(byteBuf);
-  }
-
-//  public static TimingMessage timingDecode(final ByteBuf byteBuf) {
-//    decodeDefaultElementResults(byteBuf);
-//    return new TimingMessage()
-//
-//  }
+public final class ElementDecodeUtils {
 
   public static Collection<ElementResult> decodeDefaultElementResults(ByteBuf byteBuf) {
     int numberOfBytesConsumed = 0;
@@ -37,7 +27,7 @@ public final class PayloadDecode {
   }
 
 
-  private static ElementResult decodeElement(ByteBuf byteBuf, ElementId elementId) {
+  public static ElementResult decodeElement(ByteBuf byteBuf, ElementId elementId) {
 
     switch (elementId.id()) {
       // 观测时间
@@ -105,7 +95,7 @@ public final class PayloadDecode {
     }
   }
 
-  private static ElementId decodeElementId(ByteBuf byteBuf) {
+  public static ElementId decodeElementId(ByteBuf byteBuf) {
     int consumed = 0;
     // 要素标识
     short id = byteBuf.getUnsignedByte(byteBuf.readerIndex());
@@ -113,6 +103,7 @@ public final class PayloadDecode {
     if (0xFF == id) {
       // 自定义要素
       elementId = byteBuf.readShort();
+      elementId = elementId ^ 0xFFFF0000;
       consumed += 2;
     } else {
       elementId = byteBuf.readUnsignedByte();

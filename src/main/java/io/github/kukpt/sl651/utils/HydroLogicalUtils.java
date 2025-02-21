@@ -34,6 +34,34 @@ public class HydroLogicalUtils {
 
   public static final short ENQ = 0x05;
 
+  /**
+   * 链路维持报
+   */
+  public static final int LINK_KEEP = 0x2f;
+  /**
+   * 测试报
+   */
+  public static final int TEST = 0x30;
+  /**
+   * 均匀时段水文信息报
+   */
+  public static final int PERIOD = 0x31;
+  /**
+   * 遥测站定时报
+   */
+  public static final int TIMING = 0x32;
+  /**
+   * 遥测站加报报
+   */
+  public static final int ADDITIONAL = 0x33;
+  /**
+   * 遥测站小时报
+   */
+  public static final int HOURLY = 0x34;
+  /**
+   * 图片
+   */
+  public static final int PICTURE = 0x36;
 
   private HydroLogicalUtils() {
   }

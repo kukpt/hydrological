@@ -113,6 +113,10 @@ public class MessageHeader {
     return SYN == frameStart;
   }
 
+  public boolean isLinkKeep() {
+    return LINK_KEEP == functionType;
+  }
+
   public int totalPackage() {
     return totalPackage;
   }

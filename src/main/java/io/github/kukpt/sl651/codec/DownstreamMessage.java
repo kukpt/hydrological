@@ -4,19 +4,23 @@ package io.github.kukpt.sl651.codec;
  * @author shuo
  * 水文下行消息
  */
-public class HydrologicalDownstreamMessage {
+public class DownstreamMessage {
 
-  public HydrologicalDownstreamMessage(MessageHeader messageHeader, DownstreamMessageContent content, short frameControlType) {
+  public DownstreamMessage(MessageHeader messageHeader, DownstreamMessagePayload content, short frameControlType) {
     this.frameControlType = frameControlType;
     this.messageHeader = messageHeader;
     this.content = content;
+  }
+
+  public int functionType() {
+    return messageHeader.functionType();
   }
 
   public MessageHeader messageHeader() {
     return messageHeader;
   }
 
-  public DownstreamMessageContent content() {
+  public DownstreamMessagePayload content() {
     return content;
   }
 
@@ -32,7 +36,7 @@ public class HydrologicalDownstreamMessage {
   /**
    * 下行消息正文
    */
-  private final DownstreamMessageContent content;
+  private final DownstreamMessagePayload content;
 
   /**
    * 报文控制符号

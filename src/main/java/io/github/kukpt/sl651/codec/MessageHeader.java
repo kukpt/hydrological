@@ -29,8 +29,8 @@ public class MessageHeader {
                        int functionType,
                        int remainingLength,
                        short frameStart,
-                       int totalLength,
-                       int currentLength) {
+                       int currentLength,
+                       int totalLength) {
     this.centralStationAddress = centralStationAddress;
     this.telemetryStationAddress = ObjectUtil.checkNotNull(telemetryStationAddress, "遥测站地址");
     this.password = password;

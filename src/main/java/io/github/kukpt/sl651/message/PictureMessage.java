@@ -10,7 +10,9 @@ public class PictureMessage extends FixedBodyMessage {
     Buffer picBuf =  Buffer.buffer();
     int pictureElement = byteBuf.readUnsignedShort();
     if (0xF3F3 == pictureElement) {
-      picBuf = Buffer.buffer(byteBuf);
+      byte[] bytes = new byte[byteBuf.readableBytes()];
+      byteBuf.readBytes(bytes);
+      picBuf = Buffer.buffer(bytes);
     }
     picture = picBuf;
   }
@@ -21,4 +23,11 @@ public class PictureMessage extends FixedBodyMessage {
     return picture;
   }
 
+  @Override
+  public String toString() {
+    final StringBuilder sb = new StringBuilder("PictureMessage{");
+    sb.append(super.toString());
+    sb.append('}');
+    return sb.toString();
+  }
 }

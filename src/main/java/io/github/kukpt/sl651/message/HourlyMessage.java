@@ -22,6 +22,7 @@ public class HourlyMessage extends FixedBodyMessage{
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("HourlyMessage{");
+    sb.append(super.toString());
     sb.append(", elementResults=").append(elementResults);
     sb.append('}');
     return sb.toString();

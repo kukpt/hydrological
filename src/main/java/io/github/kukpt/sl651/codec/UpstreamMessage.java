@@ -66,8 +66,16 @@ public class UpstreamMessage {
     return this;
   }
 
-  public void handle(Handler<ByteBuf> handler) {
-    handler.handle(this.payload());
+  private Handler<PictureMessage> pictureMessageHandler;
+  public UpstreamMessage pictureMessageHandler(Handler<PictureMessage> pictureMessageHandler) {
+    this.pictureMessageHandler = pictureMessageHandler;
+    return this;
+  }
+
+  private Handler<ByteBuf> byteBufHandler;
+  public UpstreamMessage byteBufHandler(Handler<ByteBuf> byteBufHandler) {
+    this.byteBufHandler = byteBufHandler;
+    return this;
   }
 
   public void handle() {
@@ -91,11 +99,25 @@ public class UpstreamMessage {
         case HydroLogicalUtils.HOURLY:
           this.handleHourlyMessage(this.payload());
           break;
+        case HydroLogicalUtils.PICTURE:
+          this.handlePictureMessage(this.payload());
+          break;
         default:
-//          this.chctx.fireExceptionCaught(new Exception("Wrong message function type " + hydrologicalMessage.header().functionType()));
-//          break;
+          this.handleByteBuf(this.payload());
+          break;
       }
 
+  }
+
+  private void handleByteBuf(ByteBuf buffer) {
+    if (this.byteBufHandler != null) {
+      this.byteBufHandler.handle(buffer);
+    }
+  }
+  private void handlePictureMessage(ByteBuf buffer) {
+    if (this.pictureMessageHandler != null) {
+      this.pictureMessageHandler.handle(new PictureMessage(buffer));
+    }
   }
 
   private void handleLinkKeepMessage(ByteBuf payload) {

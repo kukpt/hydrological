@@ -117,7 +117,7 @@ public class HydroLogicalUtils {
     return dv;
   }
 
-  private static int ptn(int i) {
+  public static int ptn(int i) {
     i--;
     if (i < 0) {
       return 0;

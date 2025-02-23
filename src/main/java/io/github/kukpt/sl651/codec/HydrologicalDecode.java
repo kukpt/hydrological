@@ -47,7 +47,9 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
       int remainingLength = header.remainingLength();
       HydrologicalPayload hp;
       if (header.multiPack()) {
-        mp = new MultiPack(header.totalPackage());
+        if (header.currentPackage() == 1) {
+          mp = new MultiPack(header.totalPackage());
+        }
         ByteBuf payload = byteBuf.readBytes(remainingLength);
         mp.addPack(header.currentPackage(), payload);
         hp = new HydrologicalPayload(mp);
@@ -145,7 +147,7 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
       int packages = bb.getInt();
       int currentPackage = packages & 0xFFF;
       int totalPackage = packages >>> 12;
-      return new MessageHeader(cAddr, tAddr, password, funCode, len, frameStart, currentPackage, totalPackage);
+      return new MessageHeader(cAddr, tAddr, password, funCode, len - 3, frameStart, currentPackage, totalPackage);
     }
     return new MessageHeader(cAddr, tAddr, password, funCode, len, frameStart, 0, 0);
   }

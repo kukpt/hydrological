@@ -30,26 +30,7 @@ public class PictureMessageTest extends ServerDecodeBase{
 
   }
 
-  @Test
-  public void readPicture(TestContext ctx) {
-    Async async = ctx.async();
-    vertx.fileSystem().readFile("D:\\test.jpg")
-    .onSuccess(b -> {
-      ByteBuf byteBuf = b.getByteBuf();
-      int len = byteBuf.readableBytes();
-      int i = len / 1000;
-      for (int j = 0; j < i; j++) {
 
-      }
-
-    });
-  }
-
-  private void taa() {
-    int st = 0x7e7e;
-
-    String a = "7E7E640066666666C05036";
-  }
 
   @Test(timeout = 3_000L)
   public void test(TestContext ctx) {

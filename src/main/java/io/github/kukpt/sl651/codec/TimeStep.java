@@ -42,12 +42,15 @@ public class TimeStep {
       this.hours = bytes[1];
       this.minutes = bytes[2];
     }
+
   }
 
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("TimeStep{");
-    sb.append("dhm=").append(dhm);
+    sb.append("days=").append(dhm.days);
+    sb.append(", hours=").append(dhm.hours);
+    sb.append(", minutes=").append(dhm.minutes);
     sb.append('}');
     return sb.toString();
   }

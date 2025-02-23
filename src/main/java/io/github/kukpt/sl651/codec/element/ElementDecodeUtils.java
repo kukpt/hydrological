@@ -10,6 +10,8 @@ import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
 
+import static io.github.kukpt.sl651.utils.HydroLogicalUtils.ptn;
+
 
 public final class ElementDecodeUtils {
 
@@ -33,11 +35,11 @@ public final class ElementDecodeUtils {
       // 观测时间
       case 0xF0:
         // value type String
-        return new ElementResult(HydroLogicalUtils.readObservationTimeStr(byteBuf).toString(), elementId, 5);
+        return new ElementResult(ElementValueType.STRING, HydroLogicalUtils.readObservationTimeStr(byteBuf).toString(), elementId, 5);
       // 遥测站地址
       case 0xF1:
         // value type String
-        return new ElementResult(HydroLogicalUtils.readTelemetryStationAddress(byteBuf).toString(), elementId, 5);
+        return new ElementResult(ElementValueType.STRING, HydroLogicalUtils.readTelemetryStationAddress(byteBuf).toString(), elementId, 5);
       case 0xF2:
         throw new DecoderException("the decoder is not supported [F2]");
       case 0xF3:
@@ -48,9 +50,11 @@ public final class ElementDecodeUtils {
         // value type byte[]
         if (byteBuf.readableBytes() < 12)
           throw new DecoderException();
-        byte[] bytes = new byte[12];
-        byteBuf.readBytes(bytes);
-        return new ElementResult(bytes, elementId, 12);
+        int[] f4Value = new int[12];
+        for (int i = 0; i < 12; i++) {
+          f4Value[i] = byteBuf.readUnsignedByte();
+        }
+        return new ElementResult(ElementValueType.DOUBLE_ARRAY, toDoubleArray(f4Value, 1), elementId, 12);
       case 0xF5:
       case 0xF6:
       case 0xF7:
@@ -69,30 +73,38 @@ public final class ElementDecodeUtils {
         for (int i = 0; i < 12; i++) {
           values[i] = byteBuf.readUnsignedShort();
         }
-        return new ElementResult(Arrays.toString(values), elementId, 24);
+        return new ElementResult(ElementValueType.DOUBLE_ARRAY, toDoubleArray(values, 2), elementId, 24);
       case 0xFD:
         throw new DecoderException("the decoder is not supported [FD]");
       case 0x04:
         // 时间步长码
         // value type TimeStep
         TimeStep timeStep = TimeStep.createTimeStep(byteBuf);
-        return new ElementResult(timeStep, elementId, 3);
+        return new ElementResult(ElementValueType.TIME_STEP, timeStep, elementId, 3);
       case 0x05:
         throw new DecoderException("the decoder is not supported [05]");
       case 0x45:
         // 遥测站状态及报警信息 4字节HEX
-        if (byteBuf.readableBytes() < 4) {
-          throw new DecoderException();
-        }
-        byte[] status = new byte[4];
-        byteBuf.readBytes(status);
-        return new ElementResult(status, elementId, 4);
+        Long status = byteBuf.readUnsignedInt();
+        return new ElementResult(ElementValueType.STATUS, status, elementId, 4);
       default:
         // value type double
-        return new ElementResult(
+        return new ElementResult(ElementValueType.DOUBLE,
         HydroLogicalUtils.readBcdNumber(byteBuf, elementId.readLength(), elementId.numberPoint()), elementId,
         elementId.readLength());
     }
+  }
+
+  private static double[]  toDoubleArray(int[] values, int numberPoint) {
+    double[] doubles = new double[values.length];
+    for (int i = 0; i < values.length; i++) {
+      if (values[i] > 0) {
+        doubles[i] = (double) values[i] / HydroLogicalUtils.ptn(numberPoint);
+      } else {
+        doubles[i] = 0;
+      }
+    }
+    return doubles;
   }
 
   public static ElementId decodeElementId(ByteBuf byteBuf) {

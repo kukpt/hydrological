@@ -297,10 +297,11 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
     }
   }
 
-  Future<UpstreamMessage> request(DownstreamMessage dMsg, long timeout) {
+  public Future<UpstreamMessage> request(DownstreamMessage dMsg, long timeout) {
     int ft = dMsg.functionType();
     return write(dMsg).compose(unused ->
-                               reply.setPromise(ft).future().timeout(timeout, TimeUnit.SECONDS));
+                               reply.setPromise(ft).future().timeout(timeout, TimeUnit.SECONDS))
+    .onFailure(t -> reply.onTimeOutClear(ft, t));
   }
 
   Future<Void> writeM2Ack(MessageHeader header, int streamId) {

@@ -22,7 +22,7 @@ public class AdditionalMessage extends FixedBodyMessage {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("AdditionalMessage{");
-
+    sb.append(super.toString());
     sb.append(", elementResults=").append(elementResults);
     sb.append('}');
     return sb.toString();

@@ -46,6 +46,7 @@ public class PeriodMessage extends FixedBodyMessage {
   @Override
   public String toString() {
     final StringBuilder sb = new StringBuilder("PeriodMessage{");
+    sb.append(super.toString());
     sb.append(", elementResults=").append(elementResults);
     sb.append(", timeStep=").append(timeStep);
     sb.append(", elementId=").append(elementId);

@@ -52,32 +52,6 @@ public class HydrologicalServerConnection {
 
       handleMessage(hydrologicalMessage);
 
-//      switch (hydrologicalMessage.header().functionType()) {
-//        case LINK_KEEP:
-//          break;
-//        case TEST:
-//          this.handleTestMessage(hydrologicalMessage);
-//          break;
-//        case PERIOD:
-//          this.handlePeriodMessage(hydrologicalMessage);
-//          break;
-//        case TIMING:
-//          this.handlerTimingMessage(hydrologicalMessage);
-//          break;
-//        case ADDITIONAL:
-//          this.handleAdditionalMessage(hydrologicalMessage);
-//          break;
-//        case HOURLY:
-//          this.handleHourlyMessage(hydrologicalMessage);
-//          break;
-//        case PUMP_CONTROL:
-//          this.handlePumpControl(hydrologicalMessage);
-//          break;
-//        default:
-//          this.chctx.fireExceptionCaught(new Exception("Wrong message function type " + hydrologicalMessage.header().functionType()));
-//          break;
-//      }
-
     }
 
   }

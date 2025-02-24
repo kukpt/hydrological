@@ -7,9 +7,7 @@ import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.handler.codec.DecoderResult;
 import io.vertx.core.Handler;
-import io.vertx.core.buffer.Buffer;
 
-import static io.github.kukpt.sl651.codec.FunctionType.*;
 import static io.github.kukpt.sl651.utils.HydroLogicalUtils.ETB;
 
 /**

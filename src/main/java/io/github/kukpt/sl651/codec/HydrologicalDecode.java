@@ -1,8 +1,5 @@
 package io.github.kukpt.sl651.codec;
 
-import io.github.kukpt.sl651.codec.element.ElementId;
-import io.github.kukpt.sl651.codec.element.ElementResult;
-import io.github.kukpt.sl651.message.*;
 import io.github.kukpt.sl651.utils.CRC16;
 import io.github.kukpt.sl651.utils.HydroLogicalUtils;
 import io.netty.buffer.ByteBuf;
@@ -12,9 +9,6 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.DecoderException;
 
 import java.nio.ByteBuffer;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collection;
 import java.util.List;
 
 import static io.github.kukpt.sl651.utils.HydroLogicalUtils.*;
@@ -65,38 +59,6 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
         UpstreamMessage msg = HydrologicalMessageFactory.newMessage(header, hp, frameEnd, crcCode);
         out.add(msg);
       }
-
-
-//      // 链路维持报
-//      if (LINK_KEEP.equals(header.functionType())) {
-//        Result<LinkKeepMessage> result = decodeLinkKeep(byteBuf);
-//        remainingLength = remainingLength - result.numberOfBytesConsumed;
-//        HydrologicalMessage message = HydrologicalMessageFactory.newMessage(header, result.value);
-//        out.add(message);
-//      }
-//      // 泵站控制回复
-//      else if (PUMP_CONTROL.equals(header.functionType())) {
-//        Result<PumpStationControlResponseMessage> result = decodePumpControl(byteBuf);
-//        remainingLength = remainingLength - result.numberOfBytesConsumed;
-//        HydrologicalMessage message = HydrologicalMessageFactory.newMessage(header, result.value);
-//        out.add(message);
-//      }
-//      // 测试报，均匀时段水文信息报，遥测站定时报，遥测站加报报，遥测站小时报
-//      else {
-//        Result<FixedBodyMessage> fixedBodyMessageResult = decodeFixedBodyMessage(byteBuf);
-//        Result<?> result = decodeBody(header.functionType(), fixedBodyMessageResult.value, byteBuf);
-//        remainingLength = remainingLength - fixedBodyMessageResult.numberOfBytesConsumed - result
-//        .numberOfBytesConsumed;
-//        HydrologicalMessage message = HydrologicalMessageFactory.newMessage(header, result.value);
-//        out.add(message);
-//      }
-//
-//      byteBuf.skipBytes(3); // 跳过 报文结束标识和CRC校验码
-//      if (remainingLength != 0) {
-//        throw new DecoderException(
-//        "non-zero remaining payload bytes: " +
-//        remainingLength + " (" + header.functionType() + ')');
-//      }
 
     } catch (Exception cause) {
       byteBuf.skipBytes(actualReadableBytes());
@@ -150,24 +112,6 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
       return new MessageHeader(cAddr, tAddr, password, funCode, len - 3, frameStart, currentPackage, totalPackage);
     }
     return new MessageHeader(cAddr, tAddr, password, funCode, len, frameStart, 0, 0);
-  }
-
-
-  private static Result<?> decodeBody(FunctionType functionType, FixedBodyMessage fixedBodyMessage, ByteBuf byteBuf) {
-    switch (functionType) {
-//      case TEST:
-//        return decodeTestMessage(byteBuf, fixedBodyMessage);
-//      case PERIOD:
-//        return decodePeriod(byteBuf, fixedBodyMessage);
-//      case TIMING:
-//        return decodeTiming(byteBuf, fixedBodyMessage);
-//      case ADDITIONAL:
-//        return decodeAdditional(byteBuf, fixedBodyMessage);
-//      case HOURLY:
-//        return decodeHourlyMessage(byteBuf, fixedBodyMessage);
-      default:
-        throw new DecoderException("Unknown message type, do not know how to validate the body");
-    }
   }
 
   private static Result<PumpStationControlResponseMessage> decodePumpControl(ByteBuf byteBuf) {

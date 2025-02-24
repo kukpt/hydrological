@@ -25,9 +25,7 @@ public class UpstreamMessageTest extends ServerDecodeBase {
   @Before
   public void Add() throws Exception {
     super.setUp(endpoint -> {
-      MessageHeader
-      new DownstreamMessage(endpoint);
-      endpoint.request()
+
       endpoint.messageHandler(m -> {
         m.linkKeepMessageHandler(k -> {
           System.out.println(k.toString());

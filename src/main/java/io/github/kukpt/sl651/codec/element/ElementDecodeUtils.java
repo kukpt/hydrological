@@ -6,11 +6,8 @@ import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderException;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-
-import static io.github.kukpt.sl651.utils.HydroLogicalUtils.ptn;
 
 
 public final class ElementDecodeUtils {

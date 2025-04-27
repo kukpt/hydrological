@@ -1,6 +1,5 @@
 package io.github.kukpt.sl651;
 
-import io.github.kukpt.sl651.message.TimingMessage;
 import io.netty.buffer.ByteBufUtil;
 import io.vertx.core.Handler;
 import io.vertx.core.buffer.Buffer;
@@ -37,12 +36,12 @@ public class ServerDecodeTest extends ServerDecodeBase {
       System.out.print("接收到服务端响应：-> ");
       System.out.println(ByteBufUtil.hexDump(b.getBytes()));
       byte[] addr = b.getBytes(2, 7);
-      ctx.assertTrue(Arrays.equals(addr, new byte[]{0x37, 0x16, 0x02, 0x00, 0x04}));
+      ctx.assertTrue(Arrays.equals(addr, new byte[]{0x21, 0x01, 0x11, 0x02, 0x12}));
       async.complete();
     };
     super.connect(h)
     .onSuccess(so -> {
-      String msg = "7e7e01ccd7000085c05032003a02008c000101000015f1f1ccd700008548f0f00001010000272b000000000076280000000000361b0000003923000000004520000000033812122503b140";
+      String msg = "7e7e022101110212a000320047020003250427193603f1f1210111021248f0f025042208453923aaaaaaaa361b000000272b0000000000302b0000000146ff042300000460ff052300061000ff1f11000038121366031369";
       byte[] bytes = ByteBufUtil.decodeHexDump(msg, 0, msg.length());
       Buffer buffer = Buffer.buffer(bytes);
       so.write(buffer);

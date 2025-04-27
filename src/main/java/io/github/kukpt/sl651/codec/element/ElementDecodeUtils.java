@@ -4,23 +4,28 @@ import io.github.kukpt.sl651.codec.TimeStep;
 import io.github.kukpt.sl651.utils.HydroLogicalUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderException;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
-
 public final class ElementDecodeUtils {
+  private static final Logger logger = LoggerFactory.getLogger(ElementDecodeUtils.class);
 
   public static Collection<ElementResult> decodeDefaultElementResults(ByteBuf byteBuf) {
-    int numberOfBytesConsumed = 0;
     final List<ElementResult> elementResults = new ArrayList<>();
     while (byteBuf.isReadable()) {
       final ElementId elementId = decodeElementId(byteBuf);
-      final ElementResult elementResult = decodeElement(byteBuf, elementId);
-      numberOfBytesConsumed =
-      numberOfBytesConsumed + elementId.consumed() + elementResult.getNumberOfBytesConsumed();
-      elementResults.add(elementResult);
+      try {
+        final ElementResult elementResult = decodeElement(byteBuf, elementId);
+        elementResults.add(elementResult);
+      }
+      catch (Exception e) {
+        logger.error("ElementResult decoding failed!", e);
+      }
+
     }
     return elementResults;
   }

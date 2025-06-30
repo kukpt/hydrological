@@ -45,6 +45,9 @@ public class HydrologicalDecode extends ByteToMessageDecoder {
           mp = new MultiPack(header.totalPackage());
         }
         ByteBuf payload = byteBuf.readBytes(remainingLength);
+        if (mp == null) {
+          mp = new MultiPack(header.totalPackage());
+        }
         mp.addPack(header.currentPackage(), payload);
         hp = new HydrologicalPayload(mp);
       } else {

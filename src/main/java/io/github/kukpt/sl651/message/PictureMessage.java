@@ -1,5 +1,7 @@
 package io.github.kukpt.sl651.message;
 
+import io.github.kukpt.sl651.codec.element.ElementDecodeUtils;
+import io.github.kukpt.sl651.codec.element.ElementId;
 import io.netty.buffer.ByteBuf;
 import io.vertx.core.buffer.Buffer;
 
@@ -8,8 +10,8 @@ public class PictureMessage extends FixedBodyMessage {
   public PictureMessage(ByteBuf byteBuf) {
     super(byteBuf);
     Buffer picBuf =  Buffer.buffer();
-    int pictureElement = byteBuf.readUnsignedShort();
-    if (0xF3F3 == pictureElement) {
+    ElementId elementId = ElementDecodeUtils.decodeElementId(byteBuf);
+    if (0xF3 == elementId.id()) {
       byte[] bytes = new byte[byteBuf.readableBytes()];
       byteBuf.readBytes(bytes);
       picBuf = Buffer.buffer(bytes);

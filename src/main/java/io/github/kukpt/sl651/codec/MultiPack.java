@@ -15,6 +15,7 @@ public class MultiPack {
   public void addPack(int currentPack, ByteBuf data) {
     byte[] bytes = new byte[data.readableBytes()];
     data.readBytes(bytes);
+    data.release();
     this.addPack(currentPack, bytes);
   }
 

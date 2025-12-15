@@ -2,7 +2,7 @@ package io.github.kukpt.sl651.codec;
 
 import io.netty.buffer.ByteBuf;
 
-class HydrologicalPayload {
+public class HydrologicalPayload {
 
   private ByteBuf sp;
 

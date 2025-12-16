@@ -105,7 +105,7 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
         if (msg.header().isLinkKeep()) {
           return;
         }
-        writeM2Ack(msg.header(), this.nextStreamId(), frameEndType);
+        writeM2Ack(msg.header(), msg.streamId(), frameEndType);
       }
     }
   }

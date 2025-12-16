@@ -16,6 +16,11 @@ import static io.github.kukpt.sl651.utils.HydroLogicalUtils.ETB;
  */
 public class UpstreamMessage {
 
+  /**
+   * 报文正文
+   */
+  private IMessageBody messageBody;
+
   private final MessageHeader header;
 
   private final HydrologicalPayload payload;
@@ -113,44 +118,58 @@ public class UpstreamMessage {
     }
   }
   private void handlePictureMessage(ByteBuf buffer) {
+    PictureMessage messageBody = new PictureMessage(buffer);
+    this.messageBody = messageBody;
     if (this.pictureMessageHandler != null) {
-      this.pictureMessageHandler.handle(new PictureMessage(buffer));
+      this.pictureMessageHandler.handle(messageBody);
     }
   }
 
   private void handleLinkKeepMessage(ByteBuf payload) {
+    LinkKeepMessage messageBody = new LinkKeepMessage(payload);
+    this.messageBody = messageBody;
     if (this.linkKeepMessageHandler != null) {
-      this.linkKeepMessageHandler.handle(new LinkKeepMessage(payload));
+      this.linkKeepMessageHandler.handle(messageBody);
     }
   }
 
   private void handleHourlyMessage(ByteBuf payload) {
+    HourlyMessage messageBody = new HourlyMessage(payload);
+    this.messageBody = messageBody;
     if (this.hourlyMessageHandler != null) {
-      this.hourlyMessageHandler.handle(new HourlyMessage(payload));
+      this.hourlyMessageHandler.handle(messageBody);
     }
   }
 
   private void handleAdditionalMessage(ByteBuf payload) {
+    AdditionalMessage messageBody = new AdditionalMessage(payload);
+    this.messageBody = messageBody;
     if (this.additionalMessageHandler != null) {
-      this.additionalMessageHandler.handle(new AdditionalMessage(payload));
+      this.additionalMessageHandler.handle(messageBody);
     }
   }
 
   private void handlerTimingMessage(ByteBuf payload) {
+    TimingMessage messageBody = new TimingMessage(payload);
+    this.messageBody = messageBody;
     if (this.timingMessageHandler != null) {
-      this.timingMessageHandler.handle(new TimingMessage(payload));
+      this.timingMessageHandler.handle(messageBody);
     }
   }
 
   private void handlePeriodMessage(ByteBuf payload) {
+    PeriodMessage messageBody = new PeriodMessage(payload);
+    this.messageBody = messageBody;
     if (this.periodMessageHandler != null) {
-      this.periodMessageHandler.handle(new PeriodMessage(payload));
+      this.periodMessageHandler.handle(messageBody);
     }
   }
 
   private void handleTestMessage(ByteBuf payload) {
+    TestMessage messageBody = new TestMessage(payload);
+    this.messageBody = messageBody;
     if (this.testMessageHandler != null) {
-      this.testMessageHandler.handle(new TestMessage(payload));
+      this.testMessageHandler.handle(messageBody);
     }
   }
 
@@ -226,6 +245,13 @@ public class UpstreamMessage {
     this.payload = payload;
     this.coderResult = coderResult;
     this.frameEnd = frameEnd;
+  }
+
+  public int streamId() {
+    if (this.messageBody != null) {
+      return this.messageBody.streamId();
+    }
+    return 0;
   }
 
   @Override

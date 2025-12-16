@@ -5,7 +5,9 @@ import io.github.kukpt.sl651.codec.ReportTime;
 import io.github.kukpt.sl651.utils.HydroLogicalUtils;
 import io.netty.buffer.ByteBuf;
 
-public class FixedBodyMessage {
+public class FixedBodyMessage implements IMessageBody {
+
+  @Override
   public int streamId() {
     return streamId;
   }

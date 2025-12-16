@@ -4,7 +4,7 @@ import io.github.kukpt.sl651.codec.ReportTime;
 import io.github.kukpt.sl651.utils.HydroLogicalUtils;
 import io.netty.buffer.ByteBuf;
 
-public class LinkKeepMessage {
+public class LinkKeepMessage implements IMessageBody {
 
   private final int streamId;
 
@@ -13,6 +13,11 @@ public class LinkKeepMessage {
   public LinkKeepMessage(ByteBuf byteBuf) {
     this.streamId = byteBuf.readUnsignedShort();
     this.reportTime = HydroLogicalUtils.readReportTimeStr(byteBuf);
+  }
+
+  @Override
+  public int streamId() {
+    return this.streamId;
   }
 
   @Override

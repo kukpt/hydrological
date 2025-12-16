@@ -60,8 +60,12 @@ public class HydrologicalServerConnection {
     if (endpoint != null) {
       return;
     }
-    this.endpoint = new HydrologicalEndpointImpl(so, message.header().telemetryStationAddress(),
-                                                 options.getProtocolPassword(), options.getCentralStationAddress());
+    this.endpoint = new HydrologicalEndpointImpl(so,
+                                                 message.header().telemetryStationAddress(),
+                                                 options.getProtocolPassword(),
+                                                 options.getCentralStationAddress(),
+                                                 options.isM2LinkMode(),
+                                                 options.getFrameEndType());
     this.endpointHandler.handle(this.endpoint);
     this.so.exceptionHandler(t -> this.endpoint.handleException(t));
     this.so.closeHandler(v -> this.endpoint.handleClose());

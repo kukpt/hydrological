@@ -3,15 +3,12 @@ package io.github.kukpt.sl651.impl;
 import io.github.kukpt.sl651.HydrologicalEndpoint;
 import io.github.kukpt.sl651.ReplyPromise;
 import io.github.kukpt.sl651.codec.*;
-import io.github.kukpt.sl651.utils.HydroLogicalUtils;
+import io.github.kukpt.sl651.utils.FrameEndType;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.Promise;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetSocketInternal;
 
-import java.util.HashMap;
-import java.util.Map;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
@@ -49,19 +46,27 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
 
   private boolean isClosed;
 
-  private boolean isM2LinkMode = true;
+  private final boolean isM2LinkMode;
+
+  private FrameEndType frameEndType;
 
   private void initHandlers() {
     this.messageHandler = msg -> {
     };
   }
 
-  public HydrologicalEndpointImpl(
-  NetSocketInternal so, String endpointId, int protocolPassword, short centralStationAddress) {
+  public HydrologicalEndpointImpl(NetSocketInternal so,
+                                  String endpointId,
+                                  int protocolPassword,
+                                  short centralStationAddress,
+                                  boolean isM2LinkMode,
+                                  FrameEndType frameEndType) {
     this.conn = so;
     this.endpointId = endpointId;
     this.protocolPassword = protocolPassword;
     this.centralStationAddress = centralStationAddress;
+    this.isM2LinkMode = isM2LinkMode;
+    this.frameEndType = frameEndType;
   }
 
   @Override
@@ -89,17 +94,6 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
     }
   }
 
-  @Override
-  public HydrologicalEndpoint setM2LinkMode(boolean m2LinkMode) {
-    this.isM2LinkMode = m2LinkMode;
-    return this;
-  }
-
-  private boolean isM2LinkMode() {
-    return isM2LinkMode;
-  }
-
-
   void handleMessage(UpstreamMessage msg) {
     synchronized (this.conn) {
       checkClosed();
@@ -107,11 +101,11 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
       if (this.messageHandler != null) {
         this.messageHandler.handle(msg);
       }
-      if (isM2LinkMode()) {
+      if (isM2LinkMode) {
         if (msg.header().isLinkKeep()) {
           return;
         }
-        writeM2Ack(msg.header(), this.nextStreamId());
+        writeM2Ack(msg.header(), this.nextStreamId(), frameEndType);
       }
     }
   }
@@ -304,9 +298,9 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
     .onFailure(t -> reply.onTimeOutClear(ft, t));
   }
 
-  Future<Void> writeM2Ack(MessageHeader header, int streamId) {
-    DownstreamMessage m2Ack = HydrologicalMessageFactory.createM2Ack(header, streamId);
-    return this.write(m2Ack);
+  void writeM2Ack(MessageHeader header, int streamId, FrameEndType ft) {
+    DownstreamMessage m2Ack = HydrologicalMessageFactory.createM2Ack(header, streamId, ft);
+    this.write(m2Ack);
   }
 
 

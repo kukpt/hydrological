@@ -13,8 +13,6 @@ public interface HydrologicalEndpoint {
 
   SocketAddress localAddress();
 
-  HydrologicalEndpoint setM2LinkMode(boolean m2LinkMode);
-
   String endpointId();
 
   public Future<UpstreamMessage> request(DownstreamMessage dMsg, long timeout);

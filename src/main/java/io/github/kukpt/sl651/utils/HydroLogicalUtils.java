@@ -32,6 +32,10 @@ public class HydroLogicalUtils {
 
   public static final short EOT = 0x04;
 
+  public static final short ESC = 0x1B;
+
+  public static final short ACK = 0x06;
+
   public static final short ENQ = 0x05;
 
   /**

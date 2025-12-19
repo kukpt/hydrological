@@ -23,7 +23,5 @@ public interface HydrologicalServer {
 
   int actualPort();
 
-  long connectionCount();
-
   Future<Void> close();
 }

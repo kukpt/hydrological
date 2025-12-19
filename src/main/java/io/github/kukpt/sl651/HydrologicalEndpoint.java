@@ -9,17 +9,23 @@ public interface HydrologicalEndpoint {
 
   void close();
 
+  void enableDebug();
+
+  void disableDebug();
+
   SocketAddress remoteAddress();
 
   SocketAddress localAddress();
 
   String endpointId();
 
-  public Future<UpstreamMessage> request(DownstreamMessage dMsg, long timeout);
+  int password();
+
+  Future<UpstreamMessage> request(DownstreamMessage dMsg, long timeout);
 
   HydrologicalEndpoint messageHandler(Handler<UpstreamMessage> messageHandler);
 
-  HydrologicalEndpoint closeHandler(Handler<Void> closeHandler);
+  HydrologicalEndpoint closeHandler(Handler<HydrologicalEndpoint> closeHandler);
 
   HydrologicalEndpoint exceptionHandler(Handler<Throwable> handler);
 //  /**

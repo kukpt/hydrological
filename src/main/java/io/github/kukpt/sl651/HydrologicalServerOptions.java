@@ -14,8 +14,12 @@ public class HydrologicalServerOptions extends NetServerOptions {
   private final static boolean M2_LINK_MODE = true;
   private final static short CENTRAL_STATION_ADDRESS = 0x01;
   private final static int PROTOCOL_PASSWORD = 0x1234;
-  private final static int TIMEOUT_ON_CONNECT = 60;
+  private final static int TIMEOUT_ON_CONNECT = 180;
   private final static FrameEndType FRAME_END_TYPE = FrameEndType.ESC_MODE;
+  private final static boolean ENABLE_METRICS_WEB = false;
+  private final static String METRICS_WEB_USERNAME = "wisetion";
+  private final static String METRICS_WEB_PASSWORD = "wisetion";
+  private final static int METRICS_WEB_PORT = 11889;
 
   private boolean isM2LinkMode;
 
@@ -27,6 +31,14 @@ public class HydrologicalServerOptions extends NetServerOptions {
 
   private FrameEndType frameEndType;
 
+  private boolean enableMetricsWeb;
+
+  private String metricsWebUserName;
+
+  private String metricsWebPassword;
+
+  private int metricsWebPort;
+
   public void init() {
     this.setPort(DEFAULT_PORT);
     this.setM2LinkMode(M2_LINK_MODE);
@@ -34,6 +46,10 @@ public class HydrologicalServerOptions extends NetServerOptions {
     this.setProtocolPassword(PROTOCOL_PASSWORD);
     this.timeoutOnConnect = TIMEOUT_ON_CONNECT;
     this.frameEndType = FRAME_END_TYPE;
+    this.enableMetricsWeb = ENABLE_METRICS_WEB;
+    this.metricsWebUserName = METRICS_WEB_USERNAME;
+    this.metricsWebPassword = METRICS_WEB_PASSWORD;
+    this.metricsWebPort = METRICS_WEB_PORT;
   }
 
   public HydrologicalServerOptions() {
@@ -79,6 +95,7 @@ public class HydrologicalServerOptions extends NetServerOptions {
     this.timeoutOnConnect = timeoutOnConnect;
     return this;
   }
+
   public int getTimeoutOnConnect() {
     return this.timeoutOnConnect;
   }
@@ -100,5 +117,42 @@ public class HydrologicalServerOptions extends NetServerOptions {
 
   public FrameEndType getFrameEndType() {
     return this.frameEndType;
+  }
+
+  public HydrologicalServerOptions setEnableMetricsWeb(boolean enableMetricsWeb) {
+    this.enableMetricsWeb = enableMetricsWeb;
+    return this;
+  }
+
+
+  public HydrologicalServerOptions setMetricsWebUserName(String metricsWebUserName) {
+    this.metricsWebUserName = metricsWebUserName;
+    return this;
+  }
+
+  public HydrologicalServerOptions setMetricsWebPassword(String metricsWebPassword) {
+    this.metricsWebPassword = metricsWebPassword;
+    return this;
+  }
+
+  public HydrologicalServerOptions setMetricsWebPort(int metricsWebPort) {
+    this.metricsWebPort = metricsWebPort;
+    return this;
+  }
+
+  public boolean isEnableMetricsWeb() {
+    return enableMetricsWeb;
+  }
+
+  public String getMetricsWebUserName() {
+    return metricsWebUserName;
+  }
+
+  public String getMetricsWebPassword() {
+    return metricsWebPassword;
+  }
+
+  public int getMetricsWebPort() {
+    return metricsWebPort;
   }
 }

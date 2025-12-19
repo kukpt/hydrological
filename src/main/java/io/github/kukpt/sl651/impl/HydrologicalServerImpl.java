@@ -1,8 +1,6 @@
 package io.github.kukpt.sl651.impl;
 
-import io.github.kukpt.sl651.HydrologicalEndpoint;
-import io.github.kukpt.sl651.HydrologicalServer;
-import io.github.kukpt.sl651.HydrologicalServerOptions;
+import io.github.kukpt.sl651.*;
 import io.github.kukpt.sl651.codec.HydrologicalDecode;
 import io.github.kukpt.sl651.codec.HydrologicalEncode;
 import io.netty.channel.ChannelPipeline;
@@ -10,17 +8,18 @@ import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
+import io.vertx.core.internal.logging.Logger;
+import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.NetServer;
-import io.vertx.core.net.impl.NetSocketInternal;
 
-import java.util.concurrent.atomic.AtomicLong;
 
 /**
  * 水文协议服务器
  */
 public class HydrologicalServerImpl implements HydrologicalServer {
 
-  private final AtomicLong connectionCount = new AtomicLong(0L);
+  private final static Logger log = LoggerFactory.getLogger(HydrologicalServerImpl.class);
 
   private final HydrologicalServerOptions options;
 
@@ -36,6 +35,16 @@ public class HydrologicalServerImpl implements HydrologicalServer {
     this.vertx = vertx;
     this.options = options;
     this.server = vertx.createNetServer(options);
+    this.createMetricsWebServer(options);
+  }
+  private void createMetricsWebServer(HydrologicalServerOptions options) {
+    if (options.isEnableMetricsWeb()) {
+      vertx.deployVerticle(new MetricsWebVerticle(options.getMetricsWebUserName(),
+                                                  options.getMetricsWebPassword(),
+                                                  options.getMetricsWebPort()))
+      .onSuccess(id -> {log.info(String.format("deployed Metrics Web Server! id=%s", id));})
+      .onFailure(err -> {log.error(String.format("deploy Metrics Web Server Verticle failed! %s", err.getMessage()), err);});
+    }
   }
 
 
@@ -69,8 +78,7 @@ public class HydrologicalServerImpl implements HydrologicalServer {
       NetSocketInternal soi = (NetSocketInternal) so;
       ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
       initChannel(pipeline);
-      HydrologicalServerConnection conn = new HydrologicalServerConnection(soi, h1, h2, options);
-      connectionCount.incrementAndGet();
+      HydrologicalServerConnection conn = new HydrologicalServerConnection(vertx, soi, h1, h2, options);
       soi.eventHandler(ReferenceCountUtil::release);
       soi.messageHandler(msg -> {
         synchronized (conn) {
@@ -78,10 +86,9 @@ public class HydrologicalServerImpl implements HydrologicalServer {
         }
       });
       soi.closeHandler(unused -> {
-        connectionCount.decrementAndGet();
-//        synchronized (conn) {
-//          conn.handleClose();
-//        }
+        synchronized (conn) {
+          conn.handleClose();
+        }
       });
     });
     return server.listen(port, host).map(this);
@@ -104,10 +111,6 @@ public class HydrologicalServerImpl implements HydrologicalServer {
     return server.actualPort();
   }
 
-  @Override
-  public long connectionCount() {
-    return this.connectionCount.get();
-  }
   @Override
   public Future<Void> close() {
     return server.close();

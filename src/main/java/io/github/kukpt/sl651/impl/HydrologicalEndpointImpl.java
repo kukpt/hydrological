@@ -1,18 +1,27 @@
 package io.github.kukpt.sl651.impl;
 
+import com.google.common.collect.EvictingQueue;
 import io.github.kukpt.sl651.HydrologicalEndpoint;
 import io.github.kukpt.sl651.ReplyPromise;
 import io.github.kukpt.sl651.codec.*;
+import io.github.kukpt.sl651.metrics.MetricsStorage;
+import io.github.kukpt.sl651.metrics.TrafficMonitor;
+import io.github.kukpt.sl651.metrics.TrafficMonitorHandler;
 import io.github.kukpt.sl651.utils.FrameEndType;
+import io.netty.channel.ChannelPipeline;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.internal.net.NetSocketInternal;
 import io.vertx.core.net.SocketAddress;
-import io.vertx.core.net.impl.NetSocketInternal;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
+
+  private boolean isDebug = false;
+
+  private EvictingQueue<TrafficMonitor> queue;
 
   private final ReplyPromise reply = new ReplyPromise();
 
@@ -42,7 +51,7 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
 
   private Handler<Throwable> exceptionHandler;
 
-  private Handler<Void> closeHandler;
+  private Handler<HydrologicalEndpoint> closeHandler;
 
   private boolean isClosed;
 
@@ -55,12 +64,13 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
     };
   }
 
-  public HydrologicalEndpointImpl(NetSocketInternal so,
-                                  String endpointId,
-                                  int protocolPassword,
-                                  short centralStationAddress,
-                                  boolean isM2LinkMode,
-                                  FrameEndType frameEndType) {
+  public HydrologicalEndpointImpl(
+  NetSocketInternal so,
+  String endpointId,
+  int protocolPassword,
+  short centralStationAddress,
+  boolean isM2LinkMode,
+  FrameEndType frameEndType) {
     this.conn = so;
     this.endpointId = endpointId;
     this.protocolPassword = protocolPassword;
@@ -76,6 +86,30 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
       this.conn.close();
       this.cleanUp();
     }
+  }
+
+  @Override
+  public void enableDebug() {
+    if (this.isDebug) {
+      return;
+    }
+    this.isDebug = true;
+    this.queue = EvictingQueue.<TrafficMonitor>create(24);
+    MetricsStorage.me().setTrafficMonitorQueue(this, queue);
+    ChannelPipeline pipeline = this.conn.channelHandlerContext().pipeline();
+    pipeline.addFirst(new TrafficMonitorHandler(this, queue));
+  }
+
+  @Override
+  public void disableDebug() {
+    if (!this.isDebug) {
+      return;
+    }
+    this.isDebug = false;
+    ChannelPipeline pipeline = this.conn.channelHandlerContext().pipeline();
+    pipeline.remove(TrafficMonitorHandler.class);
+    this.queue = null;
+    MetricsStorage.me().removeTrafficMonitorQueue(this);
   }
 
   @Override
@@ -232,7 +266,7 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
 //  }
 
   @Override
-  public HydrologicalEndpoint closeHandler(Handler<Void> closeHandler) {
+  public HydrologicalEndpoint closeHandler(Handler<HydrologicalEndpoint> closeHandler) {
     synchronized (this.conn) {
       this.closeHandler = closeHandler;
     }
@@ -282,11 +316,11 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
     }
   }
 
-  void handleClose() {
+  void handleClose(HydrologicalEndpoint endpoint) {
     synchronized (this.conn) {
       cleanUp();
       if (this.closeHandler != null) {
-        this.closeHandler.handle(null);
+        this.closeHandler.handle(endpoint);
       }
     }
   }
@@ -324,5 +358,10 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
 
   public String endpointId() {
     return this.endpointId;
+  }
+
+  @Override
+  public int password() {
+    return this.protocolPassword;
   }
 }

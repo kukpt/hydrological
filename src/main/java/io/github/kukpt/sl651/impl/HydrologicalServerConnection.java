@@ -3,12 +3,18 @@ package io.github.kukpt.sl651.impl;
 import io.github.kukpt.sl651.HydrologicalEndpoint;
 import io.github.kukpt.sl651.HydrologicalServerOptions;
 import io.github.kukpt.sl651.codec.UpstreamMessage;
+import io.github.kukpt.sl651.metrics.MetricsStorage;
+import io.github.kukpt.sl651.utils.LocalEbTopic;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.vertx.core.Handler;
-import io.vertx.core.net.impl.NetSocketInternal;
+import io.vertx.core.Vertx;
+import io.vertx.core.internal.net.NetSocketInternal;
+
 
 public class HydrologicalServerConnection {
+
+  private final Vertx vertx;
 
   private Handler<HydrologicalEndpoint> endpointHandler;
 
@@ -22,10 +28,18 @@ public class HydrologicalServerConnection {
 
   private HydrologicalEndpointImpl endpoint;
 
-  public HydrologicalServerConnection(NetSocketInternal so,
-                                      Handler<HydrologicalEndpoint> endpointHandler,
-                                      Handler<Throwable> exceptionHandler,
-                                      HydrologicalServerOptions options) {
+  private void consumeEbMsg() {
+    vertx.eventBus().localConsumer(LocalEbTopic.generateEnableEndpointDebugTopic(this.endpoint.endpointId()), unused -> this.endpoint.enableDebug());
+    vertx.eventBus().localConsumer(LocalEbTopic.generateDisableEndpointDebugTopic(this.endpoint.endpointId()), unused -> this.endpoint.disableDebug());
+  }
+
+  public HydrologicalServerConnection(
+  Vertx vertx,
+  NetSocketInternal so,
+  Handler<HydrologicalEndpoint> endpointHandler,
+  Handler<Throwable> exceptionHandler,
+  HydrologicalServerOptions options) {
+    this.vertx = vertx;
     this.so = so;
     this.chctx = so.channelHandlerContext();
     this.endpointHandler = endpointHandler;
@@ -62,19 +76,31 @@ public class HydrologicalServerConnection {
     }
     this.endpoint = new HydrologicalEndpointImpl(so,
                                                  message.header().telemetryStationAddress(),
-                                                 options.getProtocolPassword(),
+                                                 message.header().password(),
                                                  options.getCentralStationAddress(),
                                                  options.isM2LinkMode(),
                                                  options.getFrameEndType());
+    MetricsStorage.me().putEndpoint(this.endpoint);
+    this.consumeEbMsg();
     this.endpointHandler.handle(this.endpoint);
     this.so.exceptionHandler(t -> this.endpoint.handleException(t));
-    this.so.closeHandler(v -> this.endpoint.handleClose());
+    this.so.closeHandler(v -> {
+      this.handleClose();
+    });
   }
 
   void handleMessage(UpstreamMessage message) {
     synchronized (this.so) {
       this.checkEndpoint();
       this.endpoint.handleMessage(message);
+    }
+  }
+
+  public void handleClose() {
+    synchronized (this.so) {
+      this.checkEndpoint();
+      MetricsStorage.me().removeEndPoint(endpoint);
+      this.endpoint.handleClose(endpoint);
     }
   }
 

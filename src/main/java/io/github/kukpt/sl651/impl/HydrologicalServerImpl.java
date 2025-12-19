@@ -3,11 +3,13 @@ package io.github.kukpt.sl651.impl;
 import io.github.kukpt.sl651.*;
 import io.github.kukpt.sl651.codec.HydrologicalDecode;
 import io.github.kukpt.sl651.codec.HydrologicalEncode;
+import io.github.kukpt.sl651.metrics.ProtocolDetector;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.netty.util.ReferenceCountUtil;
 import io.vertx.core.*;
+import io.vertx.core.buffer.Buffer;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.internal.net.NetSocketInternal;
@@ -40,21 +42,23 @@ public class HydrologicalServerImpl implements HydrologicalServer {
   private void createMetricsWebServer(HydrologicalServerOptions options) {
     if (options.isEnableMetricsWeb()) {
       vertx.deployVerticle(new MetricsWebVerticle(options.getMetricsWebUserName(),
-                                                  options.getMetricsWebPassword(),
-                                                  options.getMetricsWebPort()))
+                                                  options.getMetricsWebPassword()))
       .onSuccess(id -> {log.info(String.format("deployed Metrics Web Server! id=%s", id));})
       .onFailure(err -> {log.error(String.format("deploy Metrics Web Server Verticle failed! %s", err.getMessage()), err);});
     }
   }
 
-
   private void initChannel(ChannelPipeline pipeline) {
-    // the SL651-2014 M2 max frame length is 0xFFF
-    // M3 max frame length is 0xFFFF
-    pipeline.addBefore("handler", "frame-decode", new LengthFieldBasedFrameDecoder(0xFFFF, 11, 2, 4, 0));
-    pipeline.addBefore("handler", "idle", new IdleStateHandler(options.getTimeoutOnConnect(), 0, 0));
-    pipeline.addBefore("handler", "hydrological-encode", new HydrologicalEncode());
-    pipeline.addBefore("handler", "hydrological-decode", new HydrologicalDecode());
+    if (options.isEnableMetricsWeb()) {
+      pipeline.addBefore("handler", "protocol-detector", new ProtocolDetector(vertx, options));
+    } else {
+      // the SL651-2014 M2 max frame length is 0xFFF
+      // M3 max frame length is 0xFFFF
+      pipeline.addBefore("handler", "frame-decode", new LengthFieldBasedFrameDecoder(0xFFFF, 11, 2, 4, 0));
+      pipeline.addBefore("handler", "idle", new IdleStateHandler(options.getTimeoutOnConnect(), 0, 0));
+      pipeline.addBefore("handler", "hydrological-encode", new HydrologicalEncode());
+      pipeline.addBefore("handler", "hydrological-decode", new HydrologicalDecode());
+    }
   }
 
   @Override
@@ -78,18 +82,19 @@ public class HydrologicalServerImpl implements HydrologicalServer {
       NetSocketInternal soi = (NetSocketInternal) so;
       ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
       initChannel(pipeline);
-      HydrologicalServerConnection conn = new HydrologicalServerConnection(vertx, soi, h1, h2, options);
       soi.eventHandler(ReferenceCountUtil::release);
       soi.messageHandler(msg -> {
+        HydrologicalServerConnection conn = new HydrologicalServerConnection(vertx, soi, h1, h2, options);
+        soi.closeHandler(unused -> {
+          synchronized (conn) {
+            conn.handleClose();
+          }
+        });
         synchronized (conn) {
           conn.handleMsg(msg);
         }
       });
-      soi.closeHandler(unused -> {
-        synchronized (conn) {
-          conn.handleClose();
-        }
-      });
+
     });
     return server.listen(port, host).map(this);
   }

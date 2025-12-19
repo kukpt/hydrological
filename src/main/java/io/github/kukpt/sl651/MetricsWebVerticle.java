@@ -8,10 +8,12 @@ import io.github.kukpt.sl651.metrics.TrafficMonitor;
 import io.github.kukpt.sl651.utils.LocalEbTopic;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
+import io.vertx.core.http.HttpServer;
 import io.vertx.core.internal.logging.Logger;
 import io.vertx.core.internal.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
+import io.vertx.core.shareddata.LocalMap;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
 import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
@@ -30,12 +32,10 @@ public class MetricsWebVerticle extends AbstractVerticle {
 
   private final String password;
 
-  private final int metricsWebPort;
 
-  public MetricsWebVerticle(String userName, String password, int metricsWebPort) {
+  public MetricsWebVerticle(String userName, String password) {
     this.userName = userName;
     this.password = password;
-    this.metricsWebPort = metricsWebPort;
   }
 
   static {
@@ -104,9 +104,16 @@ public class MetricsWebVerticle extends AbstractVerticle {
     });
 
     // 根目录自动跳转到登录
-    router.get("/").handler(ctx -> ctx.redirect("/static/login.html"));
+    router.get("/wisetion").handler(ctx -> ctx.redirect("/static/login.html"));
 
-    vertx.createHttpServer().requestHandler(router).listen(metricsWebPort);
-    log.info(String.format("Metrics Web Server started. port: %s", metricsWebPort));
+    Future<HttpServer> listen = vertx.createHttpServer().requestHandler(router).listen(0);
+    listen.onSuccess(s -> {
+      vertx.sharedData().getLocalMap("hy").put("metrics-port", s.actualPort());
+      log.info(String.format("Metrics Web Server started. port: %s", s.actualPort()));
+    })
+    .onFailure(err -> {
+      log.error("Metrics Web Server start failed!", err);
+    });
+
   }
 }

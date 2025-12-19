@@ -19,7 +19,6 @@ public class HydrologicalServerOptions extends NetServerOptions {
   private final static boolean ENABLE_METRICS_WEB = false;
   private final static String METRICS_WEB_USERNAME = "wisetion";
   private final static String METRICS_WEB_PASSWORD = "wisetion";
-  private final static int METRICS_WEB_PORT = 11889;
 
   private boolean isM2LinkMode;
 
@@ -37,8 +36,6 @@ public class HydrologicalServerOptions extends NetServerOptions {
 
   private String metricsWebPassword;
 
-  private int metricsWebPort;
-
   public void init() {
     this.setPort(DEFAULT_PORT);
     this.setM2LinkMode(M2_LINK_MODE);
@@ -49,7 +46,6 @@ public class HydrologicalServerOptions extends NetServerOptions {
     this.enableMetricsWeb = ENABLE_METRICS_WEB;
     this.metricsWebUserName = METRICS_WEB_USERNAME;
     this.metricsWebPassword = METRICS_WEB_PASSWORD;
-    this.metricsWebPort = METRICS_WEB_PORT;
   }
 
   public HydrologicalServerOptions() {
@@ -135,10 +131,6 @@ public class HydrologicalServerOptions extends NetServerOptions {
     return this;
   }
 
-  public HydrologicalServerOptions setMetricsWebPort(int metricsWebPort) {
-    this.metricsWebPort = metricsWebPort;
-    return this;
-  }
 
   public boolean isEnableMetricsWeb() {
     return enableMetricsWeb;
@@ -152,7 +144,5 @@ public class HydrologicalServerOptions extends NetServerOptions {
     return metricsWebPassword;
   }
 
-  public int getMetricsWebPort() {
-    return metricsWebPort;
-  }
+
 }

@@ -9,14 +9,12 @@ import io.github.kukpt.sl651.utils.LocalEbTopic;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
 import io.vertx.core.http.HttpServer;
-import io.vertx.core.internal.logging.Logger;
-import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
-import io.vertx.core.shareddata.LocalMap;
 import io.vertx.ext.auth.User;
 import io.vertx.ext.auth.authentication.AuthenticationProvider;
-import io.vertx.ext.auth.authentication.UsernamePasswordCredentials;
 import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.sstore.LocalSessionStore;
@@ -45,14 +43,16 @@ public class MetricsWebVerticle extends AbstractVerticle {
 
   @Override
   public void start() {
-    AuthenticationProvider authProvider = credentials -> {
-      UsernamePasswordCredentials unc = (UsernamePasswordCredentials) credentials;
 
-      if (this.userName.equals(unc.getUsername()) && this.password.equals(unc.getPassword())) {
-        return io.vertx.core.Future.succeededFuture(
-        User.create(new JsonObject().put("username", unc.getUsername())));
+    AuthenticationProvider authProvider = (credentials, result) -> {
+      String username = credentials.getString("username");
+      String password = credentials.getString("password");
+
+
+      if (this.userName.equals(username) && this.password.equals(password)) {
+        result.handle(Future.succeededFuture(User.create(new JsonObject().put("username", username))));
       } else {
-        return Future.failedFuture("Invalid credentials");
+        result.handle(Future.failedFuture("Invalid credentials"));
       }
     };
     Router router = Router.router(vertx);
@@ -99,7 +99,7 @@ public class MetricsWebVerticle extends AbstractVerticle {
 
     // 退出登录
     router.get("/logout").handler(ctx -> {
-      ctx.userContext().clear();
+      ctx.clearUser();
       ctx.redirect("/static/login.html");
     });
 

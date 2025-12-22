@@ -11,8 +11,9 @@ import io.github.kukpt.sl651.utils.FrameEndType;
 import io.netty.channel.ChannelPipeline;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
-import io.vertx.core.internal.net.NetSocketInternal;
+
 import io.vertx.core.net.SocketAddress;
+import io.vertx.core.net.impl.NetSocketInternal;
 
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;

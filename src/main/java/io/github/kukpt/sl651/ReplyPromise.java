@@ -3,8 +3,8 @@ package io.github.kukpt.sl651;
 
 import io.github.kukpt.sl651.codec.UpstreamMessage;
 import io.vertx.core.Promise;
-import io.vertx.core.internal.logging.Logger;
-import io.vertx.core.internal.logging.LoggerFactory;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.Map;
 import java.util.concurrent.ConcurrentHashMap;

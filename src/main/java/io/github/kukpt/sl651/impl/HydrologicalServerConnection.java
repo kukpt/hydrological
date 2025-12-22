@@ -9,7 +9,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.internal.net.NetSocketInternal;
+import io.vertx.core.net.impl.NetSocketInternal;
 
 
 public class HydrologicalServerConnection {

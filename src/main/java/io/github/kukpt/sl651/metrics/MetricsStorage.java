@@ -46,11 +46,10 @@ public class MetricsStorage {
     Endpoint e = new Endpoint(endpoint.endpointId(), endpoint.remoteAddress().toString(),
                                       Integer.toHexString(endpoint.password()));
     endpointMap.put(e.getEndpointId(), e);
-    System.err.println(values());
   }
   public void removeEndPoint(HydrologicalEndpoint endpoint) {
     endpointMap.remove(endpoint.endpointId());
-    System.err.println(values());
+    removeTrafficMonitorQueue(endpoint);
   }
 
   public ArrayList<Endpoint> values() {

@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>连接监控管理</title>
+    <title>Metrices</title>
     <style>
         body {
             font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
@@ -76,10 +76,10 @@
 
 <div class="container">
     <div class="header">
-        <h2>端点连接列表</h2>
+        <h2>Endpoint Connect List</h2>
         <div>
-            <button class="btn-refresh" onclick="fetchData()">刷新数据</button>
-            <a href="/logout" class="btn-logout" style="margin-left: 15px;">退出登录</a>
+            <button class="btn-refresh" onclick="fetchData()">refresh</button>
+            <a href="/logout" class="btn-logout" style="margin-left: 15px;">logout</a>
         </div>
     </div>
 
@@ -94,7 +94,7 @@
         </thead>
         <tbody id="table-body">
         <tr>
-            <td colspan="4" style="text-align: center;">正在加载数据...</td>
+            <td colspan="4" style="text-align: center;">...</td>
         </tr>
         </tbody>
     </table>

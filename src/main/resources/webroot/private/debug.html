@@ -2,7 +2,7 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>端点调试 - Vert.x</title>
+    <title>Point Debug</title>
     <style>
         body { font-family: sans-serif; padding: 20px; background: #f0f2f5; }
         .card { background: white; padding: 20px; border-radius: 8px; box-shadow: 0 2px 8px rgba(0,0,0,0.1); }
@@ -31,16 +31,16 @@
 
 <div class="card">
     <div class="controls">
-        <h2 id="title">调试端点: --</h2>
-        <button onclick="triggerDebug()" style="background: #1890ff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">发送调试指令</button>
-        <button onclick="stopDebug()" style="background: #ff4d4f; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">关闭调试</button>
-        <label>自动刷新间隔：</label>
+        <h2 id="title">Debug Point: --</h2>
+        <button onclick="triggerDebug()" style="background: #1890ff; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Enable Debug</button>
+        <button onclick="stopDebug()" style="background: #ff4d4f; color: white; border: none; padding: 8px 15px; border-radius: 4px; cursor: pointer;">Disable Debug</button>
+        <label>Refresh Interval：</label>
         <select id="refreshInterval" onchange="updateTimer()">
-            <option value="0">关闭</option>
-            <option value="5000">5秒</option>
-            <option value="10000">10秒</option>
+            <option value="0">Close</option>
+            <option value="5000">5s</option>
+            <option value="10000">10s</option>
         </select>
-        <a href="/private/dashboard.html">返回列表</a>
+        <a href="/private/dashboard.html">Go back</a>
     </div>
 
     <table>
@@ -63,25 +63,25 @@
     const endpointId = urlParams.get('id');
     let timer = null;
 
-    document.getElementById('title').innerText = `调试端点: ${endpointId}`;
+    document.getElementById('title').innerText = `Debug Point: ${endpointId}`;
 
     // 1. 发送调试指令
     async function triggerDebug() {
         try {
             const response = await fetch(`/private/debug?endpointId=${endpointId}`, { method: 'POST' });
-            if (response.ok) alert('调试指令已下发');
-            else alert('下发失败');
+            if (response.ok) alert('Enable Debug');
+            else alert('Enable');
         } catch (e) { console.error(e); }
     }
     async function stopDebug() {
-        if (!confirm('确定要关闭对端点 ' + endpointId + ' 的调试吗？')) return;
+        if (!confirm('Disable ' + endpointId + ' Debug?')) return;
 
         try {
             const response = await fetch(`/private/debug/stop?endpointId=${endpointId}`, { method: 'POST' });
             if (response.ok) {
-                alert('调试模式已关闭');
+                alert('Disable Debug');
             } else {
-                alert('操作失败');
+                alert('failed');
             }
         } catch (e) {
             console.error('Request failed', e);

@@ -30,7 +30,7 @@ public class MainVerticle extends AbstractVerticle {
       ArrayList<Endpoint> values = MetricsStorage.me().values();
       System.err.println(values);
     });
-    HydrologicalServer server = HydrologicalServer.create(vertx, new HydrologicalServerOptions().setEnableMetricsWeb(true));
+    HydrologicalServer server = HydrologicalServer.create(vertx, new HydrologicalServerOptions().enableMetricsWeb(true));
     server.endpointHandler(ep -> {
 //      ep.enableDebug();
       ep.messageHandler(msg -> {

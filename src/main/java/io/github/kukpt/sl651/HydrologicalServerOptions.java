@@ -115,7 +115,7 @@ public class HydrologicalServerOptions extends NetServerOptions {
     return this.frameEndType;
   }
 
-  public HydrologicalServerOptions setEnableMetricsWeb(boolean enableMetricsWeb) {
+  public HydrologicalServerOptions enableMetricsWeb(boolean enableMetricsWeb) {
     this.enableMetricsWeb = enableMetricsWeb;
     return this;
   }

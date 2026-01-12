@@ -9,10 +9,15 @@ import io.netty.handler.codec.ByteToMessageDecoder;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
 import io.vertx.core.Vertx;
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.List;
 
 public class ProtocolDetector extends ByteToMessageDecoder {
+
+  private final static Logger log = LoggerFactory.getLogger(ProtocolDetector.class);
+
 
   private final Vertx vertx;
 
@@ -29,7 +34,7 @@ public class ProtocolDetector extends ByteToMessageDecoder {
     }
     if (isHttp(byteBuf)) {
       int port = (int) vertx.sharedData().getLocalMap("hy").get("metrics-port");
-      ctx.pipeline().addLast(new LocalTcp2HttpProxyHandler(vertx, port));
+      ctx.pipeline().addBefore("handler", "http-proxy", new LocalTcp2HttpProxyHandler(vertx, port));
       ctx.pipeline().remove("handler");
     } else {
       // the SL651-2014 M2 max frame length is 0xFFF
@@ -41,6 +46,7 @@ public class ProtocolDetector extends ByteToMessageDecoder {
 
     }
     ctx.pipeline().remove(this);
+    log.debug(String.format("after ProtocolDetector piplines %s", ctx.pipeline().toString()));
   }
 
   private boolean isHttp(ByteBuf in) {

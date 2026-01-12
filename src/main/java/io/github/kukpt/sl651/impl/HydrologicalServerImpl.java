@@ -82,9 +82,9 @@ public class HydrologicalServerImpl implements HydrologicalServer {
       NetSocketInternal soi = (NetSocketInternal) so;
       ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
       initChannel(pipeline);
+      HydrologicalServerConnection conn = new HydrologicalServerConnection(vertx, soi, h1, h2, options);
       soi.eventHandler(ReferenceCountUtil::release);
       soi.messageHandler(msg -> {
-        HydrologicalServerConnection conn = new HydrologicalServerConnection(vertx, soi, h1, h2, options);
         soi.closeHandler(unused -> {
           synchronized (conn) {
             conn.handleClose();

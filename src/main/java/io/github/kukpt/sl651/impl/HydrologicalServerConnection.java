@@ -9,6 +9,7 @@ import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
+import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.net.impl.NetSocketInternal;
 
 
@@ -28,17 +29,23 @@ public class HydrologicalServerConnection {
 
   private HydrologicalEndpointImpl endpoint;
 
+  private MessageConsumer<Object> enableDebug;
+
+  private MessageConsumer<Object> disableDebug;
+
   private void consumeEbMsg() {
-    vertx.eventBus().localConsumer(LocalEbTopic.generateEnableEndpointDebugTopic(this.endpoint.endpointId()), unused -> this.endpoint.enableDebug());
-    vertx.eventBus().localConsumer(LocalEbTopic.generateDisableEndpointDebugTopic(this.endpoint.endpointId()), unused -> this.endpoint.disableDebug());
+    this.enableDebug = vertx.eventBus()
+                            .localConsumer(LocalEbTopic.generateEnableEndpointDebugTopic(this.endpoint.endpointId()), unused -> this.endpoint.enableDebug());
+    this.disableDebug = vertx.eventBus()
+                             .localConsumer(LocalEbTopic.generateDisableEndpointDebugTopic(this.endpoint.endpointId()), unused -> this.endpoint.disableDebug());
   }
 
   public HydrologicalServerConnection(
-  Vertx vertx,
-  NetSocketInternal so,
-  Handler<HydrologicalEndpoint> endpointHandler,
-  Handler<Throwable> exceptionHandler,
-  HydrologicalServerOptions options) {
+      Vertx vertx,
+      NetSocketInternal so,
+      Handler<HydrologicalEndpoint> endpointHandler,
+      Handler<Throwable> exceptionHandler,
+      HydrologicalServerOptions options) {
     this.vertx = vertx;
     this.so = so;
     this.chctx = so.channelHandlerContext();
@@ -71,15 +78,15 @@ public class HydrologicalServerConnection {
   }
 
   void handleConnect(UpstreamMessage message) {
-    if (endpoint != null) {
+    if (this.endpoint != null) {
       return;
     }
     this.endpoint = new HydrologicalEndpointImpl(so,
-                                                 message.header().telemetryStationAddress(),
-                                                 message.header().password(),
-                                                 options.getCentralStationAddress(),
-                                                 options.isM2LinkMode(),
-                                                 options.getFrameEndType());
+        message.header().telemetryStationAddress(),
+        message.header().password(),
+        options.getCentralStationAddress(),
+        options.isM2LinkMode(),
+        options.getFrameEndType());
     MetricsStorage.me().putEndpoint(this.endpoint);
     this.consumeEbMsg();
     this.endpointHandler.handle(this.endpoint);
@@ -100,6 +107,8 @@ public class HydrologicalServerConnection {
     synchronized (this.so) {
       this.checkEndpoint();
       MetricsStorage.me().removeEndPoint(endpoint);
+      this.enableDebug.unregister();
+      this.disableDebug.unregister();
       this.endpoint.handleClose(endpoint);
     }
   }

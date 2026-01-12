@@ -12,6 +12,8 @@ import io.netty.channel.ChannelPipeline;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
+import io.vertx.core.impl.logging.Logger;
+import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
 import io.vertx.core.net.impl.NetSocketInternal;
 
@@ -19,6 +21,8 @@ import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicInteger;
 
 public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
+
+  private final static Logger log = LoggerFactory.getLogger(HydrologicalEndpointImpl.class);
 
   private boolean isDebug = false;
 
@@ -91,26 +95,30 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
 
   @Override
   public void enableDebug() {
-    if (this.isDebug) {
-      return;
+    synchronized (this.conn) {
+      if (this.isDebug) {
+        return;
+      }
+      this.isDebug = true;
+      this.queue = EvictingQueue.<TrafficMonitor>create(24);
+      MetricsStorage.me().setTrafficMonitorQueue(this, queue);
+      ChannelPipeline pipeline = this.conn.channelHandlerContext().pipeline();
+      pipeline.addBefore("frame-decode", "traffic-monitor", new TrafficMonitorHandler(this, queue));
     }
-    this.isDebug = true;
-    this.queue = EvictingQueue.<TrafficMonitor>create(24);
-    MetricsStorage.me().setTrafficMonitorQueue(this, queue);
-    ChannelPipeline pipeline = this.conn.channelHandlerContext().pipeline();
-    pipeline.addFirst(new TrafficMonitorHandler(this, queue));
   }
 
   @Override
   public void disableDebug() {
-    if (!this.isDebug) {
-      return;
+    synchronized (this.conn) {
+      if (!this.isDebug) {
+        return;
+      }
+      this.isDebug = false;
+      ChannelPipeline pipeline = this.conn.channelHandlerContext().pipeline();
+      pipeline.remove("traffic-monitor");
+      this.queue = null;
+      MetricsStorage.me().removeTrafficMonitorQueue(this);
     }
-    this.isDebug = false;
-    ChannelPipeline pipeline = this.conn.channelHandlerContext().pipeline();
-    pipeline.remove(TrafficMonitorHandler.class);
-    this.queue = null;
-    MetricsStorage.me().removeTrafficMonitorQueue(this);
   }
 
   @Override

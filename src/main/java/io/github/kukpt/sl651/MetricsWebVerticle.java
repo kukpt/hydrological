@@ -11,6 +11,7 @@ import io.vertx.core.Future;
 import io.vertx.core.http.HttpServer;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
+import io.vertx.core.json.JsonArray;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.json.jackson.DatabindCodec;
 import io.vertx.ext.auth.User;
@@ -84,7 +85,38 @@ public class MetricsWebVerticle extends AbstractVerticle {
       List<TrafficMonitor> trafficMonitorQueueData = MetricsStorage.me().getTrafficMonitorQueueData(endpointId);
       ctx.json(trafficMonitorQueueData);
     });
+    router.get("/private/messages").handler(ctx -> {
+      String endpointId = ctx.request().getParam("endpointId");
+      if (endpointId == null || endpointId.trim().isEmpty()) {
+        ctx.response().setStatusCode(400).end("endpointId is required");
+        return;
+      }
+      String limitParam = ctx.request().getParam("limit");
+      JsonObject request = new JsonObject().put("endpointId", endpointId);
+      if (limitParam != null && !limitParam.trim().isEmpty()) {
+        try {
+          request.put("limit", Integer.parseInt(limitParam));
+        } catch (NumberFormatException e) {
+          ctx.response().setStatusCode(400).end("limit must be an integer");
+          return;
+        }
+      }
+      vertx.eventBus().<JsonArray>request(LocalEbTopic.endpointMessageReadTopic(), request)
+           .onSuccess(reply -> ctx.json(reply.body()))
+           .onFailure(err -> {
+             log.error("Read endpoint messages failed", err);
+             ctx.response().setStatusCode(500).end(err.getMessage());
+           });
+    });
 
+    router.get("/private/message-endpoints").handler(ctx ->
+        vertx.eventBus().<JsonArray>request(LocalEbTopic.endpointMessageListTopic(), new JsonObject())
+             .onSuccess(reply -> ctx.json(reply.body()))
+             .onFailure(err -> {
+               log.error("List endpoint message folders failed", err);
+               ctx.response().setStatusCode(500).end(err.getMessage());
+             })
+    );
     router.post("/private/debug").handler(ctx -> {
       String endpointId = ctx.request().getParam("endpointId");
       vertx.eventBus().send(LocalEbTopic.generateEnableEndpointDebugTopic(endpointId), new JsonObject());

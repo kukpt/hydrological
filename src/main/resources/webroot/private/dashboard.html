@@ -2,138 +2,459 @@
 <html lang="zh-CN">
 <head>
     <meta charset="UTF-8">
-    <title>Metrices</title>
+    <title>端点消息中心</title>
     <style>
+        :root {
+            --bg: #edf4f7;
+            --panel: #ffffff;
+            --line: #d6e1e8;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --accent: #0f766e;
+            --accent-soft: #def7ec;
+            --shadow: 0 18px 40px rgba(15, 23, 42, 0.08);
+        }
+
+        * {
+            box-sizing: border-box;
+        }
+
         body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            padding: 20px;
-            background-color: #f4f7f6;
+            margin: 0;
+            font-family: "Segoe UI", "PingFang SC", "Microsoft YaHei", sans-serif;
+            background:
+                    radial-gradient(circle at top right, rgba(15, 118, 110, 0.14), transparent 30%),
+                    linear-gradient(180deg, #f9fcfd 0%, var(--bg) 100%);
+            color: var(--text);
+            min-height: 100vh;
+            padding: 28px 18px;
         }
 
-        .container {
-            max-width: 1000px;
+        .shell {
+            max-width: 1280px;
             margin: 0 auto;
-            background: white;
-            padding: 20px;
-            border-radius: 8px;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
         }
 
-        .header {
+        .hero {
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            gap: 16px;
+            margin-bottom: 20px;
+        }
+
+        .hero h1 {
+            margin: 0 0 8px;
+            font-size: 30px;
+        }
+
+        .hero p {
+            margin: 0;
+            color: var(--muted);
+        }
+
+        .hero-actions {
+            display: flex;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .action-link,
+        .toolbar button,
+        .toolbar select {
+            height: 38px;
+            border-radius: 10px;
+            font-size: 14px;
+        }
+
+        .action-link {
+            display: inline-flex;
+            align-items: center;
+            padding: 0 14px;
+            text-decoration: none;
+            color: var(--text);
+            background: #fff;
+            border: 1px solid var(--line);
+        }
+
+        .layout {
+            display: grid;
+            grid-template-columns: 320px 1fr;
+            gap: 18px;
+        }
+
+        .panel {
+            background: var(--panel);
+            border: 1px solid rgba(214, 225, 232, 0.95);
+            border-radius: 18px;
+            box-shadow: var(--shadow);
+            overflow: hidden;
+        }
+
+        .panel-header {
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--line);
             display: flex;
             justify-content: space-between;
             align-items: center;
-            margin-bottom: 20px;
+            gap: 12px;
+        }
+
+        .panel-header h2 {
+            margin: 0;
+            font-size: 18px;
+        }
+
+        .panel-header span {
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .endpoint-list {
+            padding: 10px;
+            max-height: 720px;
+            overflow-y: auto;
+        }
+
+        .endpoint-item {
+            display: block;
+            width: 100%;
+            text-align: left;
+            border: 1px solid transparent;
+            border-radius: 14px;
+            background: transparent;
+            padding: 14px 14px;
+            cursor: pointer;
+            transition: 0.18s ease;
+            color: inherit;
+        }
+
+        .endpoint-item:hover {
+            background: rgba(15, 118, 110, 0.06);
+            border-color: rgba(15, 118, 110, 0.12);
+        }
+
+        .endpoint-item.active {
+            background: var(--accent-soft);
+            border-color: rgba(15, 118, 110, 0.22);
+        }
+
+        .endpoint-item strong {
+            display: block;
+            margin-bottom: 4px;
+            font-size: 15px;
+        }
+
+        .endpoint-item span {
+            font-size: 12px;
+            color: var(--muted);
+        }
+
+        .empty {
+            padding: 32px 18px;
+            color: var(--muted);
+            text-align: center;
+        }
+
+        .toolbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            gap: 16px;
+            padding: 18px 20px;
+            border-bottom: 1px solid var(--line);
+            flex-wrap: wrap;
+        }
+
+        .toolbar-left,
+        .toolbar-right {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .badge {
+            display: inline-flex;
+            align-items: center;
+            padding: 8px 12px;
+            border-radius: 999px;
+            background: var(--accent-soft);
+            color: var(--accent);
+            font-weight: 600;
+        }
+
+        .toolbar select {
+            padding: 0 12px;
+            border: 1px solid var(--line);
+            background: #fff;
+        }
+
+        .toolbar button {
+            border: none;
+            padding: 0 16px;
+            color: white;
+            cursor: pointer;
+            background: linear-gradient(135deg, #0f766e, #0ea5a0);
+        }
+
+        .summary {
+            padding: 12px 20px 0;
+            color: var(--muted);
+            font-size: 13px;
+        }
+
+        .table-wrap {
+            overflow-x: auto;
+            padding: 14px 20px 20px;
         }
 
         table {
             width: 100%;
             border-collapse: collapse;
-            margin-top: 10px;
+            min-width: 820px;
         }
 
-        th, td {
-            border: 1px solid #ddd;
-            padding: 12px;
+        th,
+        td {
             text-align: left;
+            padding: 14px 12px;
+            border-bottom: 1px solid var(--line);
+            vertical-align: top;
         }
 
         th {
-            background-color: #1890ff;
-            color: white;
+            color: var(--muted);
+            font-size: 13px;
+            text-transform: uppercase;
+            letter-spacing: 0.04em;
         }
 
-        tr:nth-child(even) {
-            background-color: #fafafa;
+        .payload {
+            margin: 0;
+            white-space: pre-wrap;
+            word-break: break-word;
+            font-family: Consolas, "Courier New", monospace;
+            font-size: 13px;
+            line-height: 1.5;
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 12px;
+            max-width: 560px;
         }
 
-        tr:hover {
-            background-color: #f0f7ff;
+        @media (max-width: 980px) {
+            .layout {
+                grid-template-columns: 1fr;
+            }
+
+            .endpoint-list {
+                max-height: none;
+            }
         }
 
-        .btn-refresh {
-            background-color: #52c41a;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-        }
+        @media (max-width: 768px) {
+            body {
+                padding: 18px 12px;
+            }
 
-        .btn-refresh:hover {
-            background-color: #73d13d;
-        }
+            .hero {
+                flex-direction: column;
+            }
 
-        .btn-logout {
-            color: #ff4d4f;
-            text-decoration: none;
-            font-size: 14px;
+            .hero h1 {
+                font-size: 24px;
+            }
         }
     </style>
 </head>
 <body>
-
-<div class="container">
-    <div class="header">
-        <h2>Endpoint Connect List</h2>
+<div class="shell">
+    <div class="hero">
         <div>
-            <button class="btn-refresh" onclick="fetchData()">refresh</button>
-            <a href="/logout" class="btn-logout" style="margin-left: 15px;">logout</a>
+            <h1>端点消息中心</h1>
+            <p>先选择已有消息目录的 endpointId，再查看当天最新消息。</p>
+        </div>
+        <div class="hero-actions">
+            <a class="action-link" href="/private/dashboard.html">返回列表</a>
+            <a class="action-link" id="debugLink" href="/private/debug.html">打开调试页</a>
         </div>
     </div>
 
-    <table id="data-table">
-        <thead>
-        <tr>
-            <th>Endpoint ID</th>
-            <th>Remote Address</th>
-            <th>Connection Time</th>
-            <th>Password</th>
-        </tr>
-        </thead>
-        <tbody id="table-body">
-        <tr>
-            <td colspan="4" style="text-align: center;">...</td>
-        </tr>
-        </tbody>
-    </table>
+    <div class="layout">
+        <div class="panel">
+            <div class="panel-header">
+                <h2>Endpoint 列表</h2>
+                <span id="endpointCount">0 个目录</span>
+            </div>
+            <div class="endpoint-list" id="endpointList">
+                <div class="empty">正在加载目录...</div>
+            </div>
+        </div>
+
+        <div class="panel">
+            <div class="toolbar">
+                <div class="toolbar-left">
+                    <span class="badge" id="endpointLabel">Endpoint: 未选择</span>
+                    <label for="limitSelect">数量</label>
+                    <select id="limitSelect">
+                        <option value="20">20</option>
+                        <option value="50">50</option>
+                        <option value="100" selected>100</option>
+                    </select>
+                </div>
+                <div class="toolbar-right">
+                    <button onclick="fetchMessages()">刷新消息</button>
+                </div>
+            </div>
+
+            <div class="summary" id="summary">请先从左侧选择 endpointId。</div>
+            <div class="table-wrap">
+                <table>
+                    <thead>
+                    <tr>
+                        <th>#</th>
+                        <th>Stored At</th>
+                        <th>Payload</th>
+                    </tr>
+                    </thead>
+                    <tbody id="messageBody">
+                    <tr>
+                        <td colspan="3" class="empty">请先选择左侧列表中的 endpointId。</td>
+                    </tr>
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </div>
 </div>
 
 <script>
-    async function fetchData() {
-        const tbody = document.getElementById('table-body');
+    const params = new URLSearchParams(window.location.search);
+    let endpointId = params.get('id');
+    const endpointList = document.getElementById('endpointList');
+    const endpointCount = document.getElementById('endpointCount');
+    const endpointLabel = document.getElementById('endpointLabel');
+    const summary = document.getElementById('summary');
+    const messageBody = document.getElementById('messageBody');
+    const debugLink = document.getElementById('debugLink');
 
-        try {
-            const response = await fetch('/private/connections');
-            if (!response.ok) throw new Error('网络响应错误');
+    function escapeHtml(text) {
+        return String(text)
+            .replace(/&/g, '&amp;')
+            .replace(/</g, '&lt;')
+            .replace(/>/g, '&gt;')
+            .replace(/"/g, '&quot;')
+            .replace(/'/g, '&#39;');
+    }
 
-            const data = await response.json();
+    function updateHeader() {
+        endpointLabel.textContent = endpointId ? `Endpoint: ${endpointId}` : 'Endpoint: 未选择';
+        debugLink.href = endpointId
+            ? `/private/debug.html?id=${encodeURIComponent(endpointId)}`
+            : '/private/debug.html';
+    }
 
-            // 清空表格
-            tbody.innerHTML = '';
+    function renderEndpointList(data) {
+        endpointCount.textContent = `${data.length} 个目录`;
+        if (!data.length) {
+            endpointList.innerHTML = '<div class="empty">还没有可展示的 endpointId 文件夹。</div>';
+            return;
+        }
+        endpointList.innerHTML = data.map(item => `
+            <button class="endpoint-item ${endpointId === item.endpointId ? 'active' : ''}" data-id="${escapeHtml(item.endpointId)}">
+                <strong>${escapeHtml(item.endpointId)}</strong>
+                <span>最后修改时间: ${escapeHtml(item.modifiedTime || '-')}</span>
+            </button>
+        `).join('');
 
-            // 渲染新数据
-            // 修改数据渲染部分
-            data.forEach(item => {
-                const row = document.createElement('tr');
-                row.innerHTML = `
-                    <td><a href="/private/debug.html?id=${item.endpointId}">${item.endpointId}</a></td>
-                    <td>${item.remoteAddr}</td>
-                    <td>${item.connectionTime}</td>
-                    <td><code>${item.password}</code></td>
-                `;
-                tbody.appendChild(row);
+        document.querySelectorAll('.endpoint-item').forEach(node => {
+            node.addEventListener('click', () => {
+                endpointId = node.dataset.id;
+                const next = new URL(window.location.href);
+                next.searchParams.set('id', endpointId);
+                window.history.replaceState({}, '', next);
+                updateHeader();
+                renderEndpointList(data);
+                fetchMessages();
             });
+        });
+    }
+
+    async function fetchEndpointList() {
+        try {
+            const response = await fetch('/private/message-endpoints');
+            if (response.status === 401) {
+                window.location.href = '/static/login.html';
+                return;
+            }
+            if (!response.ok) {
+                throw new Error(await response.text() || '读取目录失败');
+            }
+            const data = await response.json();
+            renderEndpointList(data);
+            if (!endpointId && data.length) {
+                endpointId = data[0].endpointId;
+                const next = new URL(window.location.href);
+                next.searchParams.set('id', endpointId);
+                window.history.replaceState({}, '', next);
+            }
+            updateHeader();
+            if (endpointId) {
+                fetchMessages();
+            }
         } catch (error) {
-            console.error('获取数据失败:', error);
-            tbody.innerHTML = '<tr><td colspan="4" style="color:red; text-align:center;">数据加载失败，请检查登录状态</td></tr>';
+            endpointCount.textContent = '读取失败';
+            endpointList.innerHTML = `<div class="empty">${escapeHtml(error.message || '读取目录失败')}</div>`;
         }
     }
 
-    // 页面加载完成后自动获取一次数据
-    window.onload = fetchData;
-</script>
+    async function fetchMessages() {
+        updateHeader();
+        if (!endpointId) {
+            summary.textContent = '请先选择 endpointId。';
+            messageBody.innerHTML = '<tr><td colspan="3" class="empty">请先选择左侧列表中的 endpointId。</td></tr>';
+            return;
+        }
 
+        const limit = document.getElementById('limitSelect').value;
+        summary.textContent = '正在读取消息...';
+        messageBody.innerHTML = '<tr><td colspan="3" class="empty">正在读取消息...</td></tr>';
+
+        try {
+            const response = await fetch(`/private/messages?endpointId=${encodeURIComponent(endpointId)}&limit=${encodeURIComponent(limit)}`);
+            if (response.status === 401) {
+                window.location.href = '/static/login.html';
+                return;
+            }
+            if (!response.ok) {
+                throw new Error(await response.text() || '读取消息失败');
+            }
+            const data = await response.json();
+            summary.textContent = `端点 ${endpointId} 今日读取到 ${data.length} 条消息`;
+            if (!data.length) {
+                messageBody.innerHTML = '<tr><td colspan="3" class="empty">今天还没有消息记录。</td></tr>';
+                return;
+            }
+
+            messageBody.innerHTML = data.map((item, index) => `
+                <tr>
+                    <td>${index + 1}</td>
+                    <td>${escapeHtml(item._storedAt || item.recordedTime || '-')}</td>
+                    <td><pre class="payload">${escapeHtml(JSON.stringify(item, null, 2))}</pre></td>
+                </tr>
+            `).join('');
+        } catch (error) {
+            summary.textContent = '读取消息失败';
+            messageBody.innerHTML = `<tr><td colspan="3" class="empty">${escapeHtml(error.message || '读取消息失败')}</td></tr>`;
+        }
+    }
+
+    window.onload = () => {
+        updateHeader();
+        fetchEndpointList();
+    };
+</script>
 </body>
 </html>

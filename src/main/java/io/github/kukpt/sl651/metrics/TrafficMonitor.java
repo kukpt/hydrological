@@ -2,10 +2,15 @@ package io.github.kukpt.sl651.metrics;
 
 import com.fasterxml.jackson.annotation.JsonFormat;
 import io.github.kukpt.sl651.HydrologicalEndpoint;
+import io.vertx.core.buffer.Buffer;
+import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
+import java.time.format.DateTimeFormatter;
 
 public class TrafficMonitor {
+
+  private final static DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
 
   public TrafficMonitor(TYPE type, HydrologicalEndpoint endpoint, String payload) {
     this.type = type;
@@ -51,6 +56,15 @@ public class TrafficMonitor {
 
   public LocalDateTime getRecordedTime() {
     return recordedTime;
+  }
+
+  public JsonObject toJson() {
+    return new JsonObject()
+        .put("type", type.name())
+        .put("endpointId", endpointId)
+        .put("remoteAddr", remoteAddr)
+        .put("payload", payload)
+        .put("recordedTime", recordedTime.toString());
   }
 
   @Override

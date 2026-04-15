@@ -33,13 +33,6 @@ public class HydrologicalServerConnection {
 
   private MessageConsumer<Object> disableDebug;
 
-  private void consumeEbMsg() {
-    this.enableDebug = vertx.eventBus()
-                            .localConsumer(LocalEbTopic.generateEnableEndpointDebugTopic(this.endpoint.endpointId()), unused -> this.endpoint.enableDebug());
-    this.disableDebug = vertx.eventBus()
-                             .localConsumer(LocalEbTopic.generateDisableEndpointDebugTopic(this.endpoint.endpointId()), unused -> this.endpoint.disableDebug());
-  }
-
   public HydrologicalServerConnection(
       Vertx vertx,
       NetSocketInternal so,
@@ -81,14 +74,14 @@ public class HydrologicalServerConnection {
     if (this.endpoint != null) {
       return;
     }
-    this.endpoint = new HydrologicalEndpointImpl(so,
+    this.endpoint = new HydrologicalEndpointImpl(
+        vertx,
+        so,
         message.header().telemetryStationAddress(),
         message.header().password(),
         options.getCentralStationAddress(),
         options.isM2LinkMode(),
         options.getFrameEndType());
-    MetricsStorage.me().putEndpoint(this.endpoint);
-    this.consumeEbMsg();
     this.endpointHandler.handle(this.endpoint);
     this.so.exceptionHandler(t -> this.endpoint.handleException(t));
     this.so.closeHandler(v -> {

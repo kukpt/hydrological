@@ -9,10 +9,6 @@ public interface HydrologicalEndpoint {
 
   void close();
 
-  void enableDebug();
-
-  void disableDebug();
-
   SocketAddress remoteAddress();
 
   SocketAddress localAddress();

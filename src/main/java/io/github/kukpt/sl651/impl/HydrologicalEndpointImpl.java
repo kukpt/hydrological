@@ -1,17 +1,15 @@
 package io.github.kukpt.sl651.impl;
 
-import com.google.common.collect.EvictingQueue;
 import io.github.kukpt.sl651.HydrologicalEndpoint;
 import io.github.kukpt.sl651.ReplyPromise;
 import io.github.kukpt.sl651.codec.*;
-import io.github.kukpt.sl651.metrics.MetricsStorage;
-import io.github.kukpt.sl651.metrics.TrafficMonitor;
 import io.github.kukpt.sl651.metrics.TrafficMonitorHandler;
 import io.github.kukpt.sl651.utils.FrameEndType;
 import io.netty.channel.ChannelPipeline;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
 
+import io.vertx.core.Vertx;
 import io.vertx.core.impl.logging.Logger;
 import io.vertx.core.impl.logging.LoggerFactory;
 import io.vertx.core.net.SocketAddress;
@@ -25,8 +23,6 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
   private final static Logger log = LoggerFactory.getLogger(HydrologicalEndpointImpl.class);
 
   private boolean isDebug = false;
-
-  private EvictingQueue<TrafficMonitor> queue;
 
   private final ReplyPromise reply = new ReplyPromise();
 
@@ -45,6 +41,8 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
   }
 
   private final NetSocketInternal conn;
+
+  private final Vertx vertx;
 
   private final String endpointId;
 
@@ -70,18 +68,22 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
   }
 
   public HydrologicalEndpointImpl(
+  Vertx vertx,
   NetSocketInternal so,
   String endpointId,
   int protocolPassword,
   short centralStationAddress,
   boolean isM2LinkMode,
   FrameEndType frameEndType) {
+    this.vertx = vertx;
     this.conn = so;
     this.endpointId = endpointId;
     this.protocolPassword = protocolPassword;
     this.centralStationAddress = centralStationAddress;
     this.isM2LinkMode = isM2LinkMode;
     this.frameEndType = frameEndType;
+    ChannelPipeline pipeline = this.conn.channelHandlerContext().pipeline();
+    pipeline.addBefore("frame-decode", "traffic-monitor", new TrafficMonitorHandler(vertx, this));
   }
 
   @Override
@@ -90,34 +92,6 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
       checkClosed();
       this.conn.close();
       this.cleanUp();
-    }
-  }
-
-  @Override
-  public void enableDebug() {
-    synchronized (this.conn) {
-      if (this.isDebug) {
-        return;
-      }
-      this.isDebug = true;
-      this.queue = EvictingQueue.<TrafficMonitor>create(24);
-      MetricsStorage.me().setTrafficMonitorQueue(this, queue);
-      ChannelPipeline pipeline = this.conn.channelHandlerContext().pipeline();
-      pipeline.addBefore("frame-decode", "traffic-monitor", new TrafficMonitorHandler(this, queue));
-    }
-  }
-
-  @Override
-  public void disableDebug() {
-    synchronized (this.conn) {
-      if (!this.isDebug) {
-        return;
-      }
-      this.isDebug = false;
-      ChannelPipeline pipeline = this.conn.channelHandlerContext().pipeline();
-      pipeline.remove("traffic-monitor");
-      this.queue = null;
-      MetricsStorage.me().removeTrafficMonitorQueue(this);
     }
   }
 

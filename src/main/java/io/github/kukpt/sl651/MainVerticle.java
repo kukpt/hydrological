@@ -38,7 +38,7 @@ public class MainVerticle extends AbstractVerticle {
       });
       ep.closeHandler(p -> {
         System.err.println(p);
-        ep.disableDebug();
+
       });
     });
 

@@ -3,7 +3,9 @@ package io.github.kukpt.sl651.impl;
 import io.github.kukpt.sl651.*;
 import io.github.kukpt.sl651.codec.HydrologicalDecode;
 import io.github.kukpt.sl651.codec.HydrologicalEncode;
+import io.github.kukpt.sl651.metrics.EndpointMessageStoreVerticle;
 import io.github.kukpt.sl651.metrics.ProtocolDetector;
+import io.github.kukpt.sl651.metrics.TrafficMonitorHandler;
 import io.netty.channel.ChannelPipeline;
 import io.netty.handler.codec.LengthFieldBasedFrameDecoder;
 import io.netty.handler.timeout.IdleStateHandler;
@@ -38,7 +40,15 @@ public class HydrologicalServerImpl implements HydrologicalServer {
     this.options = options;
     this.server = vertx.createNetServer(options);
     this.createMetricsWebServer(options);
+    this.createMessageStoreServer();
   }
+
+  private void createMessageStoreServer() {
+    vertx.deployVerticle(new EndpointMessageStoreVerticle())
+        .onSuccess(id -> log.info(String.format("deployed Message Store Server! id=%s", id)))
+        .onFailure(err -> log.error(String.format("deploy Message Store Server Verticle failed! %s", err.getMessage()), err));
+  }
+
   private void createMetricsWebServer(HydrologicalServerOptions options) {
     if (options.isEnableMetricsWeb()) {
       vertx.deployVerticle(new MetricsWebVerticle(options.getMetricsWebUserName(),

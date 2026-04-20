@@ -2,9 +2,6 @@ package io.github.kukpt.sl651;
 
 import com.fasterxml.jackson.databind.SerializationFeature;
 import com.fasterxml.jackson.datatype.jsr310.JavaTimeModule;
-import io.github.kukpt.sl651.metrics.Endpoint;
-import io.github.kukpt.sl651.metrics.MetricsStorage;
-import io.github.kukpt.sl651.metrics.TrafficMonitor;
 import io.github.kukpt.sl651.utils.LocalEbTopic;
 import io.vertx.core.AbstractVerticle;
 import io.vertx.core.Future;
@@ -20,8 +17,7 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 
-import java.util.ArrayList;
-import java.util.List;
+
 
 public class MetricsWebVerticle extends AbstractVerticle {
 
@@ -75,16 +71,6 @@ public class MetricsWebVerticle extends AbstractVerticle {
     // 映射受保护的静态资源（把受保护的 HTML 放在另一个路径下）
     router.route("/private/*").handler(StaticHandler.create("webroot/private"));
 
-    router.get("/private/connections").handler(ctx -> {
-      ArrayList<Endpoint> values = MetricsStorage.me().values();
-      ctx.json(values);
-    });
-
-    router.get("/private/trafficMonitor").handler(ctx -> {
-      String endpointId = ctx.request().getParam("endpointId");
-      List<TrafficMonitor> trafficMonitorQueueData = MetricsStorage.me().getTrafficMonitorQueueData(endpointId);
-      ctx.json(trafficMonitorQueueData);
-    });
     router.get("/private/messages").handler(ctx -> {
       String endpointId = ctx.request().getParam("endpointId");
       if (endpointId == null || endpointId.trim().isEmpty()) {

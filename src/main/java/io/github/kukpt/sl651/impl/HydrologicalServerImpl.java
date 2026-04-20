@@ -44,7 +44,7 @@ public class HydrologicalServerImpl implements HydrologicalServer {
   }
 
   private void createMessageStoreServer() {
-    vertx.deployVerticle(new EndpointMessageStoreVerticle())
+    vertx.deployVerticle(new EndpointMessageStoreVerticle(options.getMetricsLogBaseDir()))
         .onSuccess(id -> log.info(String.format("deployed Message Store Server! id=%s", id)))
         .onFailure(err -> log.error(String.format("deploy Message Store Server Verticle failed! %s", err.getMessage()), err));
   }

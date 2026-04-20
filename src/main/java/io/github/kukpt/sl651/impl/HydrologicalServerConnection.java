@@ -3,13 +3,10 @@ package io.github.kukpt.sl651.impl;
 import io.github.kukpt.sl651.HydrologicalEndpoint;
 import io.github.kukpt.sl651.HydrologicalServerOptions;
 import io.github.kukpt.sl651.codec.UpstreamMessage;
-import io.github.kukpt.sl651.metrics.MetricsStorage;
-import io.github.kukpt.sl651.utils.LocalEbTopic;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
-import io.vertx.core.eventbus.MessageConsumer;
 import io.vertx.core.net.impl.NetSocketInternal;
 
 
@@ -28,10 +25,6 @@ public class HydrologicalServerConnection {
   private final HydrologicalServerOptions options;
 
   private HydrologicalEndpointImpl endpoint;
-
-  private MessageConsumer<Object> enableDebug;
-
-  private MessageConsumer<Object> disableDebug;
 
   public HydrologicalServerConnection(
       Vertx vertx,
@@ -99,9 +92,6 @@ public class HydrologicalServerConnection {
   public void handleClose() {
     synchronized (this.so) {
       this.checkEndpoint();
-      MetricsStorage.me().removeEndPoint(endpoint);
-      this.enableDebug.unregister();
-      this.disableDebug.unregister();
       this.endpoint.handleClose(endpoint);
     }
   }

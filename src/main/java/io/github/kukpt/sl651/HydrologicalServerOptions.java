@@ -6,6 +6,8 @@ import io.vertx.codegen.json.annotations.JsonGen;
 import io.vertx.core.json.JsonObject;
 import io.vertx.core.net.NetServerOptions;
 
+import java.nio.file.Paths;
+
 @DataObject
 @JsonGen(publicConverter = false)
 public class HydrologicalServerOptions extends NetServerOptions {
@@ -19,6 +21,8 @@ public class HydrologicalServerOptions extends NetServerOptions {
   private final static boolean ENABLE_METRICS_WEB = false;
   private final static String METRICS_WEB_USERNAME = "wisetion";
   private final static String METRICS_WEB_PASSWORD = "wisetion";
+  private static final String METRICS_LOG_BASE_DIR =
+      Paths.get(System.getProperty("user.dir"), "file-uploads").toString();
 
   private boolean isM2LinkMode;
 
@@ -36,6 +40,8 @@ public class HydrologicalServerOptions extends NetServerOptions {
 
   private String metricsWebPassword;
 
+  private String metricsLogBaseDir;
+
   public void init() {
     this.setPort(DEFAULT_PORT);
     this.setM2LinkMode(M2_LINK_MODE);
@@ -46,6 +52,7 @@ public class HydrologicalServerOptions extends NetServerOptions {
     this.enableMetricsWeb = ENABLE_METRICS_WEB;
     this.metricsWebUserName = METRICS_WEB_USERNAME;
     this.metricsWebPassword = METRICS_WEB_PASSWORD;
+    this.metricsLogBaseDir = METRICS_LOG_BASE_DIR;
   }
 
   public HydrologicalServerOptions() {
@@ -131,6 +138,14 @@ public class HydrologicalServerOptions extends NetServerOptions {
     return this;
   }
 
+  public String getMetricsLogBaseDir() {
+    return metricsLogBaseDir;
+  }
+
+  public HydrologicalServerOptions setMetricsLogBaseDir(String metricsLogBaseDir) {
+    this.metricsLogBaseDir = metricsLogBaseDir;
+    return this;
+  }
 
   public boolean isEnableMetricsWeb() {
     return enableMetricsWeb;

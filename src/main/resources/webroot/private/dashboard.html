@@ -278,7 +278,6 @@
         </div>
         <div class="hero-actions">
             <a class="action-link" href="/private/dashboard.html">返回列表</a>
-            <a class="action-link" id="debugLink" href="/private/debug.html">打开调试页</a>
         </div>
     </div>
 
@@ -338,7 +337,6 @@
     const endpointLabel = document.getElementById('endpointLabel');
     const summary = document.getElementById('summary');
     const messageBody = document.getElementById('messageBody');
-    const debugLink = document.getElementById('debugLink');
 
     function escapeHtml(text) {
         return String(text)
@@ -351,9 +349,6 @@
 
     function updateHeader() {
         endpointLabel.textContent = endpointId ? `Endpoint: ${endpointId}` : 'Endpoint: 未选择';
-        debugLink.href = endpointId
-            ? `/private/debug.html?id=${encodeURIComponent(endpointId)}`
-            : '/private/debug.html';
     }
 
     function renderEndpointList(data) {
@@ -432,7 +427,7 @@
                 throw new Error(await response.text() || '读取消息失败');
             }
             const data = await response.json();
-            summary.textContent = `端点 ${endpointId} 今日读取到 ${data.length} 条消息`;
+            summary.textContent = `端点 ${endpointId}`;
             if (!data.length) {
                 messageBody.innerHTML = '<tr><td colspan="3" class="empty">今天还没有消息记录。</td></tr>';
                 return;

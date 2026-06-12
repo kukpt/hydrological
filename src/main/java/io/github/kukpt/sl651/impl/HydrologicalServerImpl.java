@@ -51,6 +51,7 @@ public class HydrologicalServerImpl implements HydrologicalServer {
 
   private void createMetricsWebServer(HydrologicalServerOptions options) {
     if (options.isEnableMetricsWeb()) {
+      options.validateMetricsWebCredentials();
       vertx.deployVerticle(new MetricsWebVerticle(options.getMetricsWebUserName(),
                                                   options.getMetricsWebPassword()))
       .onSuccess(id -> {log.info(String.format("deployed Metrics Web Server! id=%s", id));})

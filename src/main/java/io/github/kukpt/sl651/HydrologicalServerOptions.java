@@ -19,8 +19,9 @@ public class HydrologicalServerOptions extends NetServerOptions {
   private final static int TIMEOUT_ON_CONNECT = 180;
   private final static FrameEndType FRAME_END_TYPE = FrameEndType.ESC_MODE;
   private final static boolean ENABLE_METRICS_WEB = false;
-  private final static String METRICS_WEB_USERNAME = "wisetion";
-  private final static String METRICS_WEB_PASSWORD = "wisetion";
+  public final static String METRICS_WEB_USERNAME_ENV = "HY_METRICS_USERNAME";
+  public final static String METRICS_WEB_PASSWORD_ENV = "HY_METRICS_PASSWORD";
+  private final static int MIN_METRICS_WEB_PASSWORD_LENGTH = 12;
   private static final String METRICS_LOG_BASE_DIR =
       Paths.get(System.getProperty("user.dir"), "file-uploads").toString();
 
@@ -50,8 +51,8 @@ public class HydrologicalServerOptions extends NetServerOptions {
     this.timeoutOnConnect = TIMEOUT_ON_CONNECT;
     this.frameEndType = FRAME_END_TYPE;
     this.enableMetricsWeb = ENABLE_METRICS_WEB;
-    this.metricsWebUserName = METRICS_WEB_USERNAME;
-    this.metricsWebPassword = METRICS_WEB_PASSWORD;
+    this.metricsWebUserName = envOrNull(METRICS_WEB_USERNAME_ENV);
+    this.metricsWebPassword = envOrNull(METRICS_WEB_PASSWORD_ENV);
     this.metricsLogBaseDir = METRICS_LOG_BASE_DIR;
   }
 
@@ -159,5 +160,31 @@ public class HydrologicalServerOptions extends NetServerOptions {
     return metricsWebPassword;
   }
 
+  public void validateMetricsWebCredentials() {
+    if (!this.enableMetricsWeb) {
+      return;
+    }
+    if (isBlank(this.metricsWebUserName)) {
+      throw new IllegalArgumentException("Metrics Web username is required when metrics web is enabled. "
+          + "Set it with setMetricsWebUserName(...) or environment variable " + METRICS_WEB_USERNAME_ENV + ".");
+    }
+    if (isBlank(this.metricsWebPassword)) {
+      throw new IllegalArgumentException("Metrics Web password is required when metrics web is enabled. "
+          + "Set it with setMetricsWebPassword(...) or environment variable " + METRICS_WEB_PASSWORD_ENV + ".");
+    }
+    if (this.metricsWebPassword.length() < MIN_METRICS_WEB_PASSWORD_LENGTH) {
+      throw new IllegalArgumentException("Metrics Web password must be at least "
+          + MIN_METRICS_WEB_PASSWORD_LENGTH + " characters.");
+    }
+  }
+
+  private static String envOrNull(String name) {
+    String value = System.getenv(name);
+    return isBlank(value) ? null : value;
+  }
+
+  private static boolean isBlank(String value) {
+    return value == null || value.trim().isEmpty();
+  }
 
 }

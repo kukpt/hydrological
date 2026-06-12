@@ -19,9 +19,12 @@ public class MainVerticle extends AbstractVerticle {
 
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
+    String metricsUserName = System.getenv(HydrologicalServerOptions.METRICS_WEB_USERNAME_ENV);
+    String metricsPassword = System.getenv(HydrologicalServerOptions.METRICS_WEB_PASSWORD_ENV);
+    boolean enableMetricsWeb = !isBlank(metricsUserName) && !isBlank(metricsPassword);
 
     HydrologicalServer server = HydrologicalServer.create(vertx, new HydrologicalServerOptions()
-        .enableMetricsWeb(true)
+        .enableMetricsWeb(enableMetricsWeb)
         .setMetricsLogBaseDir("/tmp/hy_logs"));
     server.endpointHandler(ep -> {
 //      ep.enableDebug();
@@ -41,5 +44,9 @@ public class MainVerticle extends AbstractVerticle {
     .onFailure(err -> err.printStackTrace())
           .onComplete(unused -> startPromise.complete());
 
+  }
+
+  private static boolean isBlank(String value) {
+    return value == null || value.trim().isEmpty();
   }
 }

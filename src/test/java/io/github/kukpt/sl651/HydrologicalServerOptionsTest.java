@@ -22,6 +22,15 @@ public class HydrologicalServerOptionsTest {
   }
 
   @Test(expected = IllegalArgumentException.class)
+  public void metricsWebUsernameCannotBeBlankWhenMetricsWebIsEnabled() {
+    new HydrologicalServerOptions()
+        .enableMetricsWeb(true)
+        .setMetricsWebUserName("   ")
+        .setMetricsWebPassword("long-enough-password")
+        .validateMetricsWebCredentials();
+  }
+
+  @Test(expected = IllegalArgumentException.class)
   public void metricsWebPasswordIsRequiredWhenMetricsWebIsEnabled() {
     new HydrologicalServerOptions()
         .enableMetricsWeb(true)

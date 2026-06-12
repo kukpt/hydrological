@@ -4,8 +4,10 @@ import io.vertx.core.Future;
 import io.vertx.core.Handler;
 import io.vertx.core.Vertx;
 import io.vertx.core.buffer.Buffer;
-import io.vertx.core.net.NetServerOptions;
 import io.vertx.core.net.NetSocket;
+import io.vertx.ext.unit.Async;
+import io.vertx.ext.unit.TestContext;
+import org.junit.After;
 
 
 public class ServerDecodeBase {
@@ -26,6 +28,12 @@ public class ServerDecodeBase {
   protected Future<NetSocket> connect(Handler<Buffer> handler) {
     return vertx.createNetClient().connect(port, "127.0.0.1")
                 .map(nt -> nt.handler(handler::handle));
+  }
+
+  @After
+  public void tearDown(TestContext context) {
+    Async async = context.async();
+    vertx.close().onComplete(context.asyncAssertSuccess(v -> async.complete()));
   }
 
 }

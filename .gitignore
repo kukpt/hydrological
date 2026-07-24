@@ -187,5 +187,4 @@ nbdist/
 /.mvn/
 /mvnw
 /mvnw.cmd
-/file-uploads/1234567891/20260612.bin
-/file-uploads/2101110212/20260612.bin
+/file-uploads/

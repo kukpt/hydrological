@@ -116,12 +116,27 @@ public class EndpointMessageStoreVerticle extends AbstractVerticle {
       message.fail(400, "endpointId is required");
       return;
     }
-    int limit = body.getInteger("limit", DEFAULT_READ_LIMIT);
-    if (limit <= 0) {
-      message.fail(400, "limit must be greater than 0");
+    int page = body.getInteger("page", 1);
+    int pageSize = body.getInteger("pageSize",
+        body.getInteger("limit", DEFAULT_READ_LIMIT));
+    LocalDate date;
+    try {
+      date = body.containsKey("date")
+          ? LocalDate.parse(body.getString("date"))
+          : LocalDate.now(zoneId);
+    } catch (DateTimeParseException | NullPointerException e) {
+      message.fail(400, "date must use yyyy-MM-dd format");
       return;
     }
-    readLatest(endpointId, Math.min(limit, DEFAULT_READ_LIMIT))
+    if (page <= 0) {
+      message.fail(400, "page must be greater than 0");
+      return;
+    }
+    if (pageSize <= 0) {
+      message.fail(400, "pageSize must be greater than 0");
+      return;
+    }
+    readPage(endpointId, date, page, Math.min(pageSize, DEFAULT_READ_LIMIT))
         .onSuccess(message::reply)
         .onFailure(err -> message.fail(500, err.getMessage()));
   }
@@ -220,14 +235,14 @@ public class EndpointMessageStoreVerticle extends AbstractVerticle {
       });
   }
 
-  private Future<JsonArray> readLatest(String endpointId, int limit) {
+  private Future<JsonObject> readPage(String endpointId, LocalDate date, int page, int pageSize) {
     FileSystem fs = vertx.fileSystem();
-    String filePath = dataFilePath(endpointId, LocalDate.now(zoneId));
+    String filePath = dataFilePath(endpointId, date);
     log.debug("Reading from: " + filePath);
     return fs.exists(filePath).compose(exists -> {
       if (!exists) {
         log.debug("File does not exist: " + filePath);
-        return Future.succeededFuture(new JsonArray());
+        return Future.succeededFuture(pageResult(new JsonArray(), date, page, pageSize, 0));
       }
       return fs.readFile(filePath)
                .compose(buffer -> {
@@ -238,13 +253,27 @@ public class EndpointMessageStoreVerticle extends AbstractVerticle {
                .map(records -> {
                  log.debug("Decoded " + records.size() + " records");
                  List<JsonObject> collected = new ArrayList<>();
-                 for (int i = records.size() - 1; i >= 0 && collected.size() < limit; i--) {
+                 long offset = (long) (page - 1) * pageSize;
+                 int start = (int) Math.min(records.size(), offset);
+                 for (int i = records.size() - 1 - start;
+                      i >= 0 && collected.size() < pageSize; i--) {
                    collected.add(records.get(i));
                  }
-                 return new JsonArray(collected);
+                 return pageResult(new JsonArray(collected), date, page, pageSize, records.size());
                })
                .onFailure(err -> log.error("Failed to read from " + filePath, err));
     });
+  }
+
+  private JsonObject pageResult(JsonArray items, LocalDate date, int page, int pageSize, int total) {
+    int totalPages = total == 0 ? 0 : (total + pageSize - 1) / pageSize;
+    return new JsonObject()
+        .put("items", items)
+        .put("date", date.toString())
+        .put("page", page)
+        .put("pageSize", pageSize)
+        .put("total", total)
+        .put("totalPages", totalPages);
   }
 
   private Future<JsonArray> listEndpointIds() {
@@ -327,9 +356,15 @@ public class EndpointMessageStoreVerticle extends AbstractVerticle {
   private Future<Void> cleanupEndpointDirs(List<String> endpointDirs, LocalDate expireBefore, FileSystem fs) {
     Future<Void> future = Future.succeededFuture();
     for (String endpointDir : endpointDirs) {
-      future = future.compose(unused -> fs.readDir(endpointDir)
-                                          .compose(files -> cleanupFiles(files, expireBefore, fs))
-                                          .compose(unused2 -> deleteDirIfEmpty(endpointDir, fs)));
+      future = future.compose(unused -> fs.props(endpointDir).compose(props -> {
+        if (!props.isDirectory()) {
+          log.debug("Skipping non-directory entry in message store: " + endpointDir);
+          return Future.succeededFuture();
+        }
+        return fs.readDir(endpointDir)
+                 .compose(files -> cleanupFiles(files, expireBefore, fs))
+                 .compose(unused2 -> deleteDirIfEmpty(endpointDir, fs));
+      }));
     }
     return future;
   }

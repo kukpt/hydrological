@@ -193,6 +193,14 @@ http://127.0.0.1:<port>/wisetion
 
 Web 调试页面支持查看端点列表、读取端点报文记录，以及开启/关闭指定端点的调试日志。
 
+消息读取接口支持分页：
+
+```text
+GET /private/messages?endpointId=<endpointId>&date=2026-07-24&page=1&pageSize=20
+```
+
+`date` 使用 `yyyy-MM-dd` 格式，不传时默认当天。结果包含 `items`、`date`、`page`、`pageSize`、`total` 和 `totalPages`；消息按最新记录优先排列，`pageSize` 最大为 100。
+
 ## 项目结构
 
 ```text

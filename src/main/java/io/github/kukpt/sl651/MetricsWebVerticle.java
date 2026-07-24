@@ -17,6 +17,8 @@ import io.vertx.ext.web.Router;
 import io.vertx.ext.web.handler.*;
 import io.vertx.ext.web.sstore.LocalSessionStore;
 
+import java.time.LocalDate;
+import java.time.format.DateTimeParseException;
 
 
 public class MetricsWebVerticle extends AbstractVerticle {
@@ -54,15 +56,18 @@ public class MetricsWebVerticle extends AbstractVerticle {
     };
     Router router = Router.router(vertx);
 
-    router.route().handler(BodyHandler.create());
-
     router.route().handler(SessionHandler.create(LocalSessionStore.create(vertx)));
     AuthenticationHandler rh = RedirectAuthHandler.create(authProvider, "/static/login.html");
 
 
     router.route("/static/*").handler(StaticHandler.create("webroot"));
 
-    router.post("/do-login").handler(FormLoginHandler.create(authProvider).setDirectLoggedInOKURL("/private/dashboard.html"));
+    router.post("/do-login")
+        .handler(BodyHandler.create()
+            .setHandleFileUploads(false)
+            .setBodyLimit(64 * 1024))
+        .handler(FormLoginHandler.create(authProvider)
+            .setDirectLoggedInOKURL("/private/dashboard.html"));
 
     // --- 4. 路由保护拦截器 ---
     // 所有访问 /private/* 的请求，如果没有登录，自动重定向到 /static/login.html
@@ -77,17 +82,39 @@ public class MetricsWebVerticle extends AbstractVerticle {
         ctx.response().setStatusCode(400).end("endpointId is required");
         return;
       }
-      String limitParam = ctx.request().getParam("limit");
+      String pageParam = ctx.request().getParam("page");
+      String pageSizeParam = ctx.request().getParam("pageSize");
+      String dateParam = ctx.request().getParam("date");
       JsonObject request = new JsonObject().put("endpointId", endpointId);
-      if (limitParam != null && !limitParam.trim().isEmpty()) {
+      if (dateParam != null && !dateParam.trim().isEmpty()) {
         try {
-          request.put("limit", Integer.parseInt(limitParam));
-        } catch (NumberFormatException e) {
-          ctx.response().setStatusCode(400).end("limit must be an integer");
+          request.put("date", LocalDate.parse(dateParam.trim()).toString());
+        } catch (DateTimeParseException e) {
+          ctx.response().setStatusCode(400).end("date must use yyyy-MM-dd format");
           return;
         }
       }
-      vertx.eventBus().<JsonArray>request(LocalEbTopic.endpointMessageReadTopic(), request)
+      try {
+        if (pageParam != null && !pageParam.trim().isEmpty()) {
+          request.put("page", Integer.parseInt(pageParam));
+        }
+        if (pageSizeParam != null && !pageSizeParam.trim().isEmpty()) {
+          request.put("pageSize", Integer.parseInt(pageSizeParam));
+        }
+      } catch (NumberFormatException e) {
+        ctx.response().setStatusCode(400).end("page and pageSize must be integers");
+        return;
+      }
+      Integer page = request.getInteger("page", 1);
+      Integer pageSize = request.getInteger("pageSize", 100);
+      if (page <= 0 || pageSize <= 0) {
+        ctx.response().setStatusCode(400).end("page and pageSize must be greater than 0");
+        return;
+      }
+      if (pageSize > 100) {
+        request.put("pageSize", 100);
+      }
+      vertx.eventBus().<JsonObject>request(LocalEbTopic.endpointMessageReadTopic(), request)
            .onSuccess(reply -> ctx.json(reply.body()))
            .onFailure(err -> {
              log.error("Read endpoint messages failed", err);

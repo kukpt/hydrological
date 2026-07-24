@@ -31,6 +31,8 @@ public class HydrologicalServerImpl implements HydrologicalServer {
 
   private final NetServer server;
 
+  private final Future<Void> initialization;
+
   private Handler<HydrologicalEndpoint> endpointHandler;
 
   private Handler<Throwable> exceptionHandler;
@@ -39,24 +41,27 @@ public class HydrologicalServerImpl implements HydrologicalServer {
     this.vertx = vertx;
     this.options = options;
     this.server = vertx.createNetServer(options);
-    this.createMetricsWebServer(options);
-    this.createMessageStoreServer();
+    this.initialization = this.createSupportingServices(options);
   }
 
-  private void createMessageStoreServer() {
-    vertx.deployVerticle(new EndpointMessageStoreVerticle(options.getMetricsLogBaseDir()))
+  private Future<Void> createSupportingServices(HydrologicalServerOptions options) {
+    return vertx.deployVerticle(new EndpointMessageStoreVerticle(options.getMetricsLogBaseDir()))
         .onSuccess(id -> log.info(String.format("deployed Message Store Server! id=%s", id)))
-        .onFailure(err -> log.error(String.format("deploy Message Store Server Verticle failed! %s", err.getMessage()), err));
-  }
-
-  private void createMetricsWebServer(HydrologicalServerOptions options) {
-    if (options.isEnableMetricsWeb()) {
-      options.validateMetricsWebCredentials();
-      vertx.deployVerticle(new MetricsWebVerticle(options.getMetricsWebUserName(),
-                                                  options.getMetricsWebPassword()))
-      .onSuccess(id -> {log.info(String.format("deployed Metrics Web Server! id=%s", id));})
-      .onFailure(err -> {log.error(String.format("deploy Metrics Web Server Verticle failed! %s", err.getMessage()), err);});
-    }
+        .onFailure(err -> log.error(String.format(
+            "deploy Message Store Server Verticle failed! %s", err.getMessage()), err))
+        .compose(id -> {
+          if (!options.isEnableMetricsWeb()) {
+            return Future.succeededFuture();
+          }
+          options.validateMetricsWebCredentials();
+          return vertx.deployVerticle(new MetricsWebVerticle(options.getMetricsWebUserName(),
+                  options.getMetricsWebPassword()))
+              .onSuccess(webId -> log.info(String.format(
+                  "deployed Metrics Web Server! id=%s", webId)))
+              .onFailure(err -> log.error(String.format(
+                  "deploy Metrics Web Server Verticle failed! %s", err.getMessage()), err))
+              .mapEmpty();
+        });
   }
 
   private void initChannel(ChannelPipeline pipeline) {
@@ -107,7 +112,7 @@ public class HydrologicalServerImpl implements HydrologicalServer {
       });
 
     });
-    return server.listen(port, host).map(this);
+    return initialization.compose(unused -> server.listen(port, host)).map(this);
   }
 
   @Override

@@ -41,7 +41,7 @@ public class ServerDecodeTest extends ServerDecodeBase {
     };
     super.connect(h)
     .onSuccess(so -> {
-      String msg = "7e7e022101110212a000320047020003250427193603f1f1210111021248f0f025042208453923aaaaaaaa361b000000272b0000000000302b0000000146ff042300000460ff052300061000ff1f11000038121366031369";
+      String msg = "7e7e017020468929a00032002f0201f0260723092000f1f1702046892948f0f02607230920371b000556272b000056590030330001177817733812138103f3a9";
       byte[] bytes = ByteBufUtil.decodeHexDump(msg, 0, msg.length());
       Buffer buffer = Buffer.buffer(bytes);
       so.write(buffer);

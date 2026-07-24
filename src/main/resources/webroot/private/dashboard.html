@@ -296,8 +296,10 @@
             <div class="toolbar">
                 <div class="toolbar-left">
                     <span class="badge" id="endpointLabel">Endpoint: 未选择</span>
-                    <label for="limitSelect">数量</label>
-                    <select id="limitSelect">
+                    <label for="dateSelect">日期</label>
+                    <input id="dateSelect" type="date" onchange="changeDate()">
+                    <label for="limitSelect">每页</label>
+                    <select id="limitSelect" onchange="changePageSize()">
                         <option value="20">20</option>
                         <option value="50">50</option>
                         <option value="100" selected>100</option>
@@ -325,6 +327,13 @@
                     </tbody>
                 </table>
             </div>
+            <div class="toolbar">
+                <div class="summary" id="pageInfo">第 0 / 0 页</div>
+                <div class="toolbar-right">
+                    <button id="prevPage" onclick="goToPage(currentPage - 1)">上一页</button>
+                    <button id="nextPage" onclick="goToPage(currentPage + 1)">下一页</button>
+                </div>
+            </div>
         </div>
     </div>
 </div>
@@ -332,11 +341,18 @@
 <script>
     const params = new URLSearchParams(window.location.search);
     let endpointId = params.get('id');
+    let currentPage = 1;
+    let totalPages = 0;
     const endpointList = document.getElementById('endpointList');
     const endpointCount = document.getElementById('endpointCount');
     const endpointLabel = document.getElementById('endpointLabel');
     const summary = document.getElementById('summary');
     const messageBody = document.getElementById('messageBody');
+    const pageInfo = document.getElementById('pageInfo');
+    const dateSelect = document.getElementById('dateSelect');
+    const now = new Date();
+    const localToday = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`;
+    dateSelect.value = params.get('date') || localToday;
 
     function escapeHtml(text) {
         return String(text)
@@ -367,12 +383,13 @@
         document.querySelectorAll('.endpoint-item').forEach(node => {
             node.addEventListener('click', () => {
                 endpointId = node.dataset.id;
+                currentPage = 1;
                 const next = new URL(window.location.href);
                 next.searchParams.set('id', endpointId);
                 window.history.replaceState({}, '', next);
                 updateHeader();
                 renderEndpointList(data);
-                fetchMessages();
+                fetchMessages(1);
             });
         });
     }
@@ -405,7 +422,29 @@
         }
     }
 
-    async function fetchMessages() {
+    function updatePager() {
+        pageInfo.textContent = `第 ${totalPages ? currentPage : 0} / ${totalPages} 页`;
+        document.getElementById('prevPage').disabled = currentPage <= 1;
+        document.getElementById('nextPage').disabled = totalPages === 0 || currentPage >= totalPages;
+    }
+
+    function goToPage(page) {
+        if (page < 1 || (totalPages > 0 && page > totalPages)) return;
+        fetchMessages(page);
+    }
+
+    function changePageSize() {
+        fetchMessages(1);
+    }
+
+    function changeDate() {
+        const next = new URL(window.location.href);
+        next.searchParams.set('date', dateSelect.value);
+        window.history.replaceState({}, '', next);
+        fetchMessages(1);
+    }
+
+    async function fetchMessages(page = currentPage) {
         updateHeader();
         if (!endpointId) {
             summary.textContent = '请先选择 endpointId。';
@@ -413,12 +452,13 @@
             return;
         }
 
-        const limit = document.getElementById('limitSelect').value;
+        const pageSize = document.getElementById('limitSelect').value;
+        const date = dateSelect.value;
         summary.textContent = '正在读取消息...';
         messageBody.innerHTML = '<tr><td colspan="3" class="empty">正在读取消息...</td></tr>';
 
         try {
-            const response = await fetch(`/private/messages?endpointId=${encodeURIComponent(endpointId)}&limit=${encodeURIComponent(limit)}`);
+            const response = await fetch(`/private/messages?endpointId=${encodeURIComponent(endpointId)}&date=${encodeURIComponent(date)}&page=${page}&pageSize=${encodeURIComponent(pageSize)}`);
             if (response.status === 401) {
                 window.location.href = '/static/login.html';
                 return;
@@ -426,16 +466,20 @@
             if (!response.ok) {
                 throw new Error(await response.text() || '读取消息失败');
             }
-            const data = await response.json();
-            summary.textContent = `端点 ${endpointId}`;
+            const result = await response.json();
+            const data = result.items || [];
+            currentPage = result.page;
+            totalPages = result.totalPages;
+            updatePager();
+            summary.textContent = `端点 ${endpointId}，${result.date}，共 ${result.total} 条`;
             if (!data.length) {
-                messageBody.innerHTML = '<tr><td colspan="3" class="empty">今天还没有消息记录。</td></tr>';
+                messageBody.innerHTML = `<tr><td colspan="3" class="empty">${escapeHtml(result.date)} 没有消息记录。</td></tr>`;
                 return;
             }
 
             messageBody.innerHTML = data.map((item, index) => `
                 <tr>
-                    <td>${index + 1}</td>
+                    <td>${(currentPage - 1) * result.pageSize + index + 1}</td>
                     <td>${escapeHtml(item._storedAt || item.recordedTime || '-')}</td>
                     <td><pre class="payload">${escapeHtml(JSON.stringify(item, null, 2))}</pre></td>
                 </tr>

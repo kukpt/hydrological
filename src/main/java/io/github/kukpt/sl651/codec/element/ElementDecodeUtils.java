@@ -18,13 +18,7 @@ public final class ElementDecodeUtils {
     final List<ElementResult> elementResults = new ArrayList<>();
     while (byteBuf.isReadable()) {
       final ElementId elementId = decodeElementId(byteBuf);
-      try {
-        final ElementResult elementResult = decodeElement(byteBuf, elementId);
-        elementResults.add(elementResult);
-      }
-      catch (Exception e) {
-        logger.error("ElementResult decoding failed!", e);
-      }
+      elementResults.add(decodeElement(byteBuf, elementId));
 
     }
     return elementResults;
@@ -32,6 +26,21 @@ public final class ElementDecodeUtils {
 
 
   public static ElementResult decodeElement(ByteBuf byteBuf, ElementId elementId) {
+    final int valueStartIndex = byteBuf.readerIndex();
+    try {
+      return decodeKnownElement(byteBuf, elementId);
+    } catch (Exception e) {
+      logger.error("ElementResult decoding failed!", e);
+      byteBuf.readerIndex(valueStartIndex);
+      int rawValueLength = Math.min(elementId.readLength(), byteBuf.readableBytes());
+      byte[] rawValue = new byte[rawValueLength];
+      byteBuf.readBytes(rawValue);
+      return new ElementResult(
+        ElementValueType.BYTE_ARRAY, rawValue, elementId, rawValueLength);
+    }
+  }
+
+  private static ElementResult decodeKnownElement(ByteBuf byteBuf, ElementId elementId) {
 
     switch (elementId.id()) {
       // 观测时间

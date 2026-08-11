@@ -23,6 +23,10 @@ public class ElementResult {
     return this.elementId;
   }
 
+  public ElementValueType valueType() {
+    return this.valueType;
+  }
+
   public long statusValue() {
     if (this.valueType == ElementValueType.STATUS) {
       return (Long) this.value;
@@ -51,6 +55,13 @@ public class ElementResult {
     throw new IllegalStateException("Unsupported value type: " + this.valueType);
   }
 
+  public byte[] byteArrayValue() {
+    if (this.valueType == ElementValueType.BYTE_ARRAY) {
+      return ((byte[]) this.value).clone();
+    }
+    throw new IllegalStateException("Unsupported value type: " + this.valueType);
+  }
+
   public TimeStep timeStepValue() {
     if (this.valueType == ElementValueType.TIME_STEP) {
       return (TimeStep) this.value;
@@ -64,6 +75,8 @@ public class ElementResult {
         return Long.toBinaryString(this.statusValue());
       case DOUBLE_ARRAY:
         return Arrays.toString(this.doubleArrayValue());
+      case BYTE_ARRAY:
+        return Arrays.toString(this.byteArrayValue());
       case STRING:
         return this.stringValue();
       case DOUBLE:

@@ -237,7 +237,9 @@ mvn test
 # 打包
 mvn clean package
 ```
-
+## 下一步
+- [ ] 解码错误后返回byte数组，由调用方作处理。
+- [ ] 完善下行操作。支持水泵开关控制。
 ## License
 
 本项目使用 Apache License 2.0，详见 [LICENSE](LICENSE)。

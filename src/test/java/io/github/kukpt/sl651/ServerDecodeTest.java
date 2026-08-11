@@ -36,7 +36,7 @@ public class ServerDecodeTest extends ServerDecodeBase {
       System.out.print("接收到服务端响应：-> ");
       System.out.println(ByteBufUtil.hexDump(b.getBytes()));
       byte[] addr = b.getBytes(2, 7);
-      ctx.assertTrue(Arrays.equals(addr, new byte[]{0x21, 0x01, 0x11, 0x02, 0x12}));
+      ctx.assertTrue(Arrays.equals(addr, new byte[]{0x70, 0x20, 0x46, (byte) 0x89, 0x29}));
       async.complete();
     };
     super.connect(h)

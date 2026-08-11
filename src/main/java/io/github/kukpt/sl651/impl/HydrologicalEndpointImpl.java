@@ -5,9 +5,11 @@ import io.github.kukpt.sl651.ReplyPromise;
 import io.github.kukpt.sl651.codec.*;
 import io.github.kukpt.sl651.metrics.TrafficMonitorHandler;
 import io.github.kukpt.sl651.utils.FrameEndType;
+import io.github.kukpt.sl651.utils.HydroLogicalUtils;
 import io.netty.channel.ChannelPipeline;
 import io.vertx.core.Future;
 import io.vertx.core.Handler;
+import io.vertx.core.Promise;
 
 import io.vertx.core.Vertx;
 import io.vertx.core.impl.logging.Logger;
@@ -21,6 +23,8 @@ import java.util.concurrent.atomic.AtomicInteger;
 public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
 
   private final static Logger log = LoggerFactory.getLogger(HydrologicalEndpointImpl.class);
+
+  private static final long DEFAULT_REQUEST_TIMEOUT = 30L;
 
   private boolean isDebug = false;
 
@@ -265,30 +269,74 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
     }
   }
 
-//  /**
-//   * 泵站控制
-//   * @param tsAddr
-//   * @param command 按照对应的数据位，0 关， 1 开。目前总共可以控制8路，实际可以拓展。
-//   * @return
-//   */
-//  @Override
-//  public Future<Integer> pumpStationControl(String tsAddr, short command) {
-//    Integer streamId = IdUtil.nextId();
-//    PumpStationControlContent content = new PumpStationControlContent(streamId, ReportTime.now(), (short) 1, command);
-//    return this.downstreamQueryControl(tsAddr, FunctionType.PUMP_CONTROL, content).map(streamId);
-//  }
-//
-//  /**
-//   * 下行查询控制
-//   * @return
-//   */
-//  Future<Void> downstreamQueryControl(String tsAddr, FunctionType type, DownstreamMessageContent content) {
-//    MessageHeader header = new MessageHeader(centralStationAddress, tsAddr, protocolPassword, type, 0, (byte)
-//    HydroLogicalUtils.STX, 0, 0);
-//    HydrologicalDownstreamMessage downstreamMessage = new HydrologicalDownstreamMessage(header, content,
-//                                                                                        HydroLogicalUtils.ENQ);
-//    return this.write(downstreamMessage);
-//  }
+  @Override
+  public Future<PumpStationControlResponseMessage> pumpStationControl(short command, long timeout) {
+    PumpStationControlContent content = new PumpStationControlContent(0, ReportTime.now(), (short) 1, command);
+    return downstream(FunctionType.PUMP_CONTROL, content, HydroLogicalUtils.ENQ, timeout).map(upstreamMessage -> {
+      final PumpStationControlResponseMessage[] response = new PumpStationControlResponseMessage[1];
+      upstreamMessage.pumpStationControlResponseHandler(msg -> response[0] = msg);
+      upstreamMessage.handle();
+      if (response[0] == null) {
+        throw new IllegalStateException("Pump station control response decode failed");
+      }
+      return response[0];
+    });
+  }
+
+  @Override
+  public Future<PumpStationControlResponseMessage> pumpStationControl(short command) {
+    return pumpStationControl(command, DEFAULT_REQUEST_TIMEOUT);
+  }
+
+  @Override
+  public Future<UpstreamMessage> downstream(
+    int functionType,
+    DownstreamMessagePayload payload,
+    short frameControlType,
+    long timeout) {
+    return request(createDownstreamMessage(functionType, payload, frameControlType), timeout);
+  }
+
+  @Override
+  public Future<UpstreamMessage> downstream(
+    int functionType,
+    DownstreamMessagePayload payload,
+    long timeout) {
+    return downstream(functionType, payload, HydroLogicalUtils.ENQ, timeout);
+  }
+
+  @Override
+  public Future<UpstreamMessage> downstream(
+    FunctionType functionType,
+    DownstreamMessagePayload payload,
+    short frameControlType,
+    long timeout) {
+    return downstream(functionType.value(), payload, frameControlType, timeout);
+  }
+
+  @Override
+  public Future<UpstreamMessage> downstream(
+    FunctionType functionType,
+    DownstreamMessagePayload payload,
+    long timeout) {
+    return downstream(functionType, payload, HydroLogicalUtils.ENQ, timeout);
+  }
+
+  private DownstreamMessage createDownstreamMessage(
+    int functionType,
+    DownstreamMessagePayload content,
+    short frameControlType) {
+    MessageHeader header = new MessageHeader(
+      centralStationAddress,
+      endpointId,
+      protocolPassword,
+      functionType,
+      0,
+      HydroLogicalUtils.STX,
+      0,
+      0);
+    return new DownstreamMessage(header, content, frameControlType);
+  }
 
   void handleException(Throwable t) {
     synchronized (this.conn) {
@@ -309,14 +357,29 @@ public class HydrologicalEndpointImpl implements HydrologicalEndpoint {
   }
 
   public Future<UpstreamMessage> request(DownstreamMessage dMsg, long timeout) {
-    int ft = dMsg.functionType();
-    return write(dMsg).compose(unused ->
-                               reply.setPromise(ft).future().timeout(timeout, TimeUnit.SECONDS))
-    .onFailure(t -> reply.onTimeOutClear(ft, t));
+    Promise<UpstreamMessage> promise = reply.setPromise(dMsg);
+    Future<UpstreamMessage> replyFuture = promise.future().timeout(timeout, TimeUnit.SECONDS);
+    if (promise.future().failed()) {
+      return promise.future();
+    }
+    write(dMsg).onFailure(t -> {
+      reply.clear(dMsg, t);
+      promise.tryFail(t);
+    });
+    return replyFuture.onFailure(t -> reply.clear(dMsg, t));
   }
 
   void writeM2Ack(MessageHeader header, int streamId, FrameEndType ft) {
-    DownstreamMessage m2Ack = HydrologicalMessageFactory.createM2Ack(header, streamId, ft);
+    MessageHeader ackHeader = new MessageHeader(
+      centralStationAddress,
+      endpointId,
+      protocolPassword,
+      header.functionType(),
+      0,
+      HydroLogicalUtils.STX,
+      0,
+      0);
+    DownstreamMessage m2Ack = HydrologicalMessageFactory.createM2Ack(ackHeader, streamId, ft);
     this.write(m2Ack);
   }
 

@@ -4,13 +4,14 @@ import io.github.kukpt.sl651.utils.HydroLogicalUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
-public class M2LinkModeAckMessage implements DownstreamMessagePayload{
+public class M2LinkModeAckMessage implements DownstreamMessagePayload, StreamIdentifiedPayload{
 
   private final int streamId;
 
   private final ReportTime reportTime;
 
-  int streamId() {
+  @Override
+  public int streamId() {
     return this.streamId;
   }
 

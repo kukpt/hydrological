@@ -19,11 +19,12 @@ public class HydrologicalServerOptions extends NetServerOptions {
   private final static int TIMEOUT_ON_CONNECT = 180;
   private final static FrameEndType FRAME_END_TYPE = FrameEndType.ESC_MODE;
   private final static boolean ENABLE_METRICS_WEB = false;
+  private final static boolean ENABLE_HTTP_PROXY = false;
   public final static String METRICS_WEB_USERNAME_ENV = "HY_METRICS_USERNAME";
   public final static String METRICS_WEB_PASSWORD_ENV = "HY_METRICS_PASSWORD";
   private final static int MIN_METRICS_WEB_PASSWORD_LENGTH = 12;
   private static final String METRICS_LOG_BASE_DIR =
-      Paths.get(System.getProperty("user.dir"), "file-uploads").toString();
+      Paths.get(System.getProperty("user.dir"), "hy-data").toString();
 
   private boolean isM2LinkMode;
 
@@ -36,6 +37,8 @@ public class HydrologicalServerOptions extends NetServerOptions {
   private FrameEndType frameEndType;
 
   private boolean enableMetricsWeb;
+
+  private boolean enableHttpProxy;
 
   private String metricsWebUserName;
 
@@ -51,6 +54,7 @@ public class HydrologicalServerOptions extends NetServerOptions {
     this.timeoutOnConnect = TIMEOUT_ON_CONNECT;
     this.frameEndType = FRAME_END_TYPE;
     this.enableMetricsWeb = ENABLE_METRICS_WEB;
+    this.enableHttpProxy = ENABLE_HTTP_PROXY;
     this.metricsWebUserName = envOrNull(METRICS_WEB_USERNAME_ENV);
     this.metricsWebPassword = envOrNull(METRICS_WEB_PASSWORD_ENV);
     this.metricsLogBaseDir = METRICS_LOG_BASE_DIR;
@@ -128,6 +132,21 @@ public class HydrologicalServerOptions extends NetServerOptions {
     return this;
   }
 
+  /**
+   * Enables HTTP protocol detection and proxying on the SL651 TCP port.
+   * Disabled by default because exposing two protocols on one port increases
+   * the attack surface. Metrics Web must also be enabled for this option to
+   * take effect.
+   */
+  public HydrologicalServerOptions enableHttpProxy(boolean enableHttpProxy) {
+    return setEnableHttpProxy(enableHttpProxy);
+  }
+
+  public HydrologicalServerOptions setEnableHttpProxy(boolean enableHttpProxy) {
+    this.enableHttpProxy = enableHttpProxy;
+    return this;
+  }
+
 
   public HydrologicalServerOptions setMetricsWebUserName(String metricsWebUserName) {
     this.metricsWebUserName = metricsWebUserName;
@@ -150,6 +169,10 @@ public class HydrologicalServerOptions extends NetServerOptions {
 
   public boolean isEnableMetricsWeb() {
     return enableMetricsWeb;
+  }
+
+  public boolean isEnableHttpProxy() {
+    return enableHttpProxy;
   }
 
   public String getMetricsWebUserName() {

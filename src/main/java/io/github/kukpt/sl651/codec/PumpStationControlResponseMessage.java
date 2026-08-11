@@ -1,10 +1,14 @@
 package io.github.kukpt.sl651.codec;
 
+import io.github.kukpt.sl651.message.IMessageBody;
+import io.github.kukpt.sl651.utils.HydroLogicalUtils;
+import io.netty.buffer.ByteBuf;
+
 /**
  * @author shuo
  * 泵站控制响应消息
  */
-public class PumpStationControlResponseMessage {
+public class PumpStationControlResponseMessage implements IMessageBody {
 
   private final int streamId;
 
@@ -43,5 +47,13 @@ public class PumpStationControlResponseMessage {
     this.telemetryStationAddress = telemetryStationAddress;
     this.length = length;
     this.command = command;
+  }
+
+  public PumpStationControlResponseMessage(ByteBuf byteBuf) {
+    this.streamId = byteBuf.readUnsignedShort();
+    this.reportTime = HydroLogicalUtils.readReportTimeStr(byteBuf);
+    this.telemetryStationAddress = HydroLogicalUtils.readTelemetryStationAddressSkipElementId(byteBuf);
+    this.length = byteBuf.readUnsignedByte();
+    this.command = byteBuf.readUnsignedByte();
   }
 }

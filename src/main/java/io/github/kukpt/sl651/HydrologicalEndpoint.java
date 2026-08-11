@@ -19,6 +19,32 @@ public interface HydrologicalEndpoint {
 
   Future<UpstreamMessage> request(DownstreamMessage dMsg, long timeout);
 
+  Future<UpstreamMessage> downstream(
+    int functionType,
+    DownstreamMessagePayload payload,
+    short frameControlType,
+    long timeout);
+
+  Future<UpstreamMessage> downstream(
+    int functionType,
+    DownstreamMessagePayload payload,
+    long timeout);
+
+  Future<UpstreamMessage> downstream(
+    FunctionType functionType,
+    DownstreamMessagePayload payload,
+    short frameControlType,
+    long timeout);
+
+  Future<UpstreamMessage> downstream(
+    FunctionType functionType,
+    DownstreamMessagePayload payload,
+    long timeout);
+
+  Future<PumpStationControlResponseMessage> pumpStationControl(short command, long timeout);
+
+  Future<PumpStationControlResponseMessage> pumpStationControl(short command);
+
   HydrologicalEndpoint messageHandler(Handler<UpstreamMessage> messageHandler);
 
   HydrologicalEndpoint closeHandler(Handler<HydrologicalEndpoint> closeHandler);

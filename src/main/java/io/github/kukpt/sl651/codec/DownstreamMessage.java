@@ -28,6 +28,13 @@ public class DownstreamMessage {
     return frameControlType;
   }
 
+  public int streamId() {
+    if (content instanceof StreamIdentifiedPayload) {
+      return ((StreamIdentifiedPayload) content).streamId();
+    }
+    return 0;
+  }
+
   /**
    * 下行消息头
    */

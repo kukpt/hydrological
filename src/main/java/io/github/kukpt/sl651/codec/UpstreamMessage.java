@@ -75,6 +75,13 @@ public class UpstreamMessage {
     return this;
   }
 
+  private Handler<PumpStationControlResponseMessage> pumpStationControlResponseHandler;
+  public UpstreamMessage pumpStationControlResponseHandler(
+    Handler<PumpStationControlResponseMessage> pumpStationControlResponseHandler) {
+    this.pumpStationControlResponseHandler = pumpStationControlResponseHandler;
+    return this;
+  }
+
   private Handler<ByteBuf> byteBufHandler;
   public UpstreamMessage byteBufHandler(Handler<ByteBuf> byteBufHandler) {
     this.byteBufHandler = byteBufHandler;
@@ -105,6 +112,9 @@ public class UpstreamMessage {
         case HydroLogicalUtils.PICTURE:
           this.handlePictureMessage(this.payload());
           break;
+        case 0x4C:
+          this.handlePumpStationControlResponseMessage(this.payload());
+          break;
         default:
           this.handleByteBuf(this.payload());
           break;
@@ -122,6 +132,20 @@ public class UpstreamMessage {
     this.messageBody = messageBody;
     if (this.pictureMessageHandler != null) {
       this.pictureMessageHandler.handle(messageBody);
+    }
+  }
+
+  private void handlePumpStationControlResponseMessage(ByteBuf buffer) {
+    if (this.messageBody instanceof PumpStationControlResponseMessage) {
+      if (this.pumpStationControlResponseHandler != null) {
+        this.pumpStationControlResponseHandler.handle((PumpStationControlResponseMessage) this.messageBody);
+      }
+      return;
+    }
+    PumpStationControlResponseMessage messageBody = new PumpStationControlResponseMessage(buffer);
+    this.messageBody = messageBody;
+    if (this.pumpStationControlResponseHandler != null) {
+      this.pumpStationControlResponseHandler.handle(messageBody);
     }
   }
 
@@ -250,6 +274,10 @@ public class UpstreamMessage {
   public int streamId() {
     if (this.messageBody != null) {
       return this.messageBody.streamId();
+    }
+    ByteBuf body = this.payload();
+    if (body != null && body.readableBytes() >= 2) {
+      return body.getUnsignedShort(body.readerIndex());
     }
     return 0;
   }

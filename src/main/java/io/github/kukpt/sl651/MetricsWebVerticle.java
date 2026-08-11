@@ -149,7 +149,7 @@ public class MetricsWebVerticle extends AbstractVerticle {
     });
 
     // 根目录自动跳转到登录
-    router.get("/wisetion").handler(ctx -> ctx.redirect("/static/login.html"));
+    router.get("/hp").handler(ctx -> ctx.redirect("/static/login.html"));
 
     Future<HttpServer> listen = vertx.createHttpServer().requestHandler(router).listen(0);
     listen.onSuccess(s -> {

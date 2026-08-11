@@ -2,7 +2,30 @@ package io.github.kukpt.sl651;
 
 import org.junit.Test;
 
+import io.vertx.core.json.JsonObject;
+
+import static org.junit.Assert.assertFalse;
+import static org.junit.Assert.assertTrue;
+
 public class HydrologicalServerOptionsTest {
+
+  @Test
+  public void httpProxyIsDisabledByDefault() {
+    assertFalse(new HydrologicalServerOptions().isEnableHttpProxy());
+  }
+
+  @Test
+  public void httpProxyCanBeEnabledExplicitly() {
+    assertTrue(new HydrologicalServerOptions().enableHttpProxy(true).isEnableHttpProxy());
+  }
+
+  @Test
+  public void httpProxyCanBeConfiguredFromJson() {
+    HydrologicalServerOptions options = new HydrologicalServerOptions(
+        new JsonObject().put("enableHttpProxy", true));
+
+    assertTrue(options.isEnableHttpProxy());
+  }
 
   @Test
   public void metricsWebCredentialsAreOptionalWhenMetricsWebIsDisabled() {

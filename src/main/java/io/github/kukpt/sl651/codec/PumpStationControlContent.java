@@ -7,7 +7,7 @@ import io.netty.buffer.Unpooled;
 /**
  * 泵站控制
  */
-public class PumpStationControlContent implements DownstreamMessagePayload{
+public class PumpStationControlContent implements DownstreamMessagePayload, StreamIdentifiedPayload{
 
   public PumpStationControlContent(int streamId, ReportTime reportTime, short length, short command){
     this.streamId = streamId;
@@ -29,6 +29,12 @@ public class PumpStationControlContent implements DownstreamMessagePayload{
    * 控制命令
    */
   private final short command;
+
+  @Override
+  public int streamId() {
+    return streamId;
+  }
+
   @Override
   public ByteBuf getByteBuf() {
     byte[] rtb = HydroLogicalUtils.strToBcd(reportTime.reportTimeStr());

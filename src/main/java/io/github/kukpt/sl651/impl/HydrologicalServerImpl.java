@@ -65,7 +65,7 @@ public class HydrologicalServerImpl implements HydrologicalServer {
   }
 
   private void initChannel(ChannelPipeline pipeline) {
-    if (options.isEnableMetricsWeb()) {
+    if (options.isEnableMetricsWeb() && options.isEnableHttpProxy()) {
       pipeline.addBefore("handler", "protocol-detector", new ProtocolDetector(vertx, options));
     } else {
       // the SL651-2014 M2 max frame length is 0xFFF

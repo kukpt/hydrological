@@ -23,7 +23,7 @@ jobs:
         java-version: '21'
         distribution: 'temurin'
         cache: 'maven'
-        server-id: ossrh
+        server-id: central
         server-username: OSSRH_USERNAME
         server-password: OSSRH_TOKEN
         gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}

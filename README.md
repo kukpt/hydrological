@@ -21,7 +21,7 @@
   - 图片报 `0x36`
   - 泵站控制 `0x4C`
 - 支持原始 `ByteBuf` 回调，便于处理暂未封装的功能码。
-- 可选启用 Metrics Web 调试页面，查看连接端点、报文日志并开启/关闭端点调试。
+- 可选启用 Metrics Web 调试页面，查看报文日志、在线端点，并从浏览器发起通用下行或泵站控制。
 
 ## 技术栈
 
@@ -297,7 +297,75 @@ http://<SL651 服务主机>:<规约 TCP 端口>/hp
 
 例如规约服务监听 `11883` 端口时，访问 `http://127.0.0.1:11883/hp`。
 
-Web 调试页面支持查看端点列表、读取端点报文记录，以及开启/关闭指定端点的调试日志。默认情况下，SL651 TCP 端口只接受水文协议，不会嗅探或代理 HTTP 请求。
+Web 调试页面支持读取端点报文记录，并提供独立的数据下行页面。登录后可从消息中心点击“数据下行”，或直接访问：
+
+```text
+/private/downstream.html
+```
+
+数据下行页面每 10 秒刷新一次在线设备，只展示当前服务进程中仍保持连接的端点。页面支持通用功能码及十六进制正文发送，也提供泵站控制 `0x4C` 的开启、关闭快捷操作；发送结果、原始响应或超时错误会显示在“最近结果”区域，最多保留本次页面会话中的 20 条记录。
+
+### Web 数据下行接口
+
+以下接口均位于 `/private/*` 认证保护范围内。通过程序调用时，需要先登录并携带会话 Cookie；POST 请求使用 `Content-Type: application/json`。
+
+相关接口：
+
+```text
+GET  /private/online-endpoints
+POST /private/downstream/raw
+POST /private/downstream/pump-control
+```
+
+读取在线端点时返回数组；每项包含端点 ID、远端地址和本次连接建立时间：
+
+```json
+[
+  {
+    "endpointId": "station-1",
+    "remoteAddress": "127.0.0.1:54321",
+    "connectedAt": "2026-08-17T10:30:45.123"
+  }
+]
+```
+
+通用下行请求正文包含 `endpointId`、`functionType`、`payloadHex`，可选传入 `frameControlType`（默认 `0x05`）和 `timeout`（默认 30 秒，范围 1 到 300 秒）：
+
+```json
+{
+  "endpointId": "station-1",
+  "functionType": 76,
+  "frameControlType": 5,
+  "payloadHex": "00002608111200000101",
+  "timeout": 30
+}
+```
+
+`functionType` 和 `frameControlType` 的取值范围均为 `0` 到 `255`。`payloadHex` 可包含空白字符，但去除空白后必须是非空、偶数位的十六进制正文。调用成功后返回匹配响应的功能码、流水号及原始正文：
+
+```json
+{
+  "success": true,
+  "endpointId": "station-1",
+  "functionType": 76,
+  "streamId": 0,
+  "responsePayloadHex": "00002608111200000101"
+}
+```
+
+泵站控制接口会自动构造 `0x4C` 正文，`command` 为 `1` 时开启、为 `0` 时关闭：
+
+```json
+{
+  "endpointId": "station-1",
+  "command": 1,
+  "timeout": 30
+}
+```
+
+页面和接口只允许向当前进程内仍在线的端点发送命令。端点已离线时返回 `404`，同一端点相同功能码已有等待中的请求时返回 `409`，等待设备响应超时返回 `504`；其他校验错误返回 `400`。错误响应统一包含 `success: false` 和 `error` 字段。
+
+### 消息分页接口
 
 消息读取接口支持分页：
 
@@ -316,6 +384,7 @@ src/main/java/io/github/kukpt/sl651
 ├── HydrologicalServerOptions.java   # 服务端与协议配置
 ├── MainVerticle.java                # 本地启动示例
 ├── MetricsWebVerticle.java          # Web 调试服务
+├── OnlineEndpointRegistry.java      # 当前进程在线端点注册表
 ├── codec/                           # 协议编解码、消息头、上下行报文
 ├── impl/                            # 服务端和连接实现
 ├── message/                         # 上行报文正文模型

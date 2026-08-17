@@ -13,19 +13,19 @@ public class MainVerticle extends AbstractVerticle {
     Vertx vertx = Vertx.vertx();
 
     vertx.deployVerticle(new MainVerticle())
-    .onFailure(err -> err.printStackTrace());
+         .onFailure(err -> err.printStackTrace());
   }
 
 
   @Override
   public void start(Promise<Void> startPromise) throws Exception {
-    String metricsUserName = System.getenv(HydrologicalServerOptions.METRICS_WEB_USERNAME_ENV);
-    String metricsPassword = System.getenv(HydrologicalServerOptions.METRICS_WEB_PASSWORD_ENV);
-    boolean enableMetricsWeb = !isBlank(metricsUserName) && !isBlank(metricsPassword);
 
     HydrologicalServer server = HydrologicalServer.create(vertx, new HydrologicalServerOptions()
-        .enableMetricsWeb(enableMetricsWeb)
-        .setMetricsLogBaseDir("/tmp/hy_logs"));
+                                                  .setMetricsWebUserName("admin")
+                                                  .setMetricsWebPassword("123123123123")
+    .enableMetricsWeb(true)
+    .enableHttpProxy(true)
+    .setMetricsLogBaseDir("/tmp/hy_logs"));
     server.endpointHandler(ep -> {
 //      ep.enableDebug();
       ep.messageHandler(msg -> {
@@ -38,10 +38,10 @@ public class MainVerticle extends AbstractVerticle {
     });
 
     server.listen(11823)
-    .onSuccess(s -> {
-      System.out.println(s.actualPort());
-    })
-    .onFailure(err -> err.printStackTrace())
+          .onSuccess(s -> {
+            System.out.println(s.actualPort());
+          })
+          .onFailure(err -> err.printStackTrace())
           .onComplete(unused -> startPromise.complete());
 
   }

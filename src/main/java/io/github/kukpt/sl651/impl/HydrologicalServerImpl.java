@@ -33,6 +33,8 @@ public class HydrologicalServerImpl implements HydrologicalServer {
 
   private final Future<Void> initialization;
 
+  private final OnlineEndpointRegistry onlineEndpoints = new OnlineEndpointRegistry();
+
   private Handler<HydrologicalEndpoint> endpointHandler;
 
   private Handler<Throwable> exceptionHandler;
@@ -55,7 +57,7 @@ public class HydrologicalServerImpl implements HydrologicalServer {
           }
           options.validateMetricsWebCredentials();
           return vertx.deployVerticle(new MetricsWebVerticle(options.getMetricsWebUserName(),
-                  options.getMetricsWebPassword()))
+                  options.getMetricsWebPassword(), onlineEndpoints))
               .onSuccess(webId -> log.info(String.format(
                   "deployed Metrics Web Server! id=%s", webId)))
               .onFailure(err -> log.error(String.format(
@@ -98,7 +100,8 @@ public class HydrologicalServerImpl implements HydrologicalServer {
       NetSocketInternal soi = (NetSocketInternal) so;
       ChannelPipeline pipeline = soi.channelHandlerContext().pipeline();
       initChannel(pipeline);
-      HydrologicalServerConnection conn = new HydrologicalServerConnection(vertx, soi, h1, h2, options);
+      HydrologicalServerConnection conn = new HydrologicalServerConnection(
+        vertx, soi, h1, h2, options, onlineEndpoints);
       soi.eventHandler(ReferenceCountUtil::release);
       soi.messageHandler(msg -> {
         soi.closeHandler(unused -> {

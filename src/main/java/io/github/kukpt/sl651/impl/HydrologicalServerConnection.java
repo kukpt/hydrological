@@ -2,6 +2,7 @@ package io.github.kukpt.sl651.impl;
 
 import io.github.kukpt.sl651.HydrologicalEndpoint;
 import io.github.kukpt.sl651.HydrologicalServerOptions;
+import io.github.kukpt.sl651.OnlineEndpointRegistry;
 import io.github.kukpt.sl651.codec.UpstreamMessage;
 import io.netty.channel.ChannelHandlerContext;
 import io.netty.handler.codec.DecoderResult;
@@ -26,18 +27,22 @@ public class HydrologicalServerConnection {
 
   private HydrologicalEndpointImpl endpoint;
 
+  private final OnlineEndpointRegistry onlineEndpoints;
+
   public HydrologicalServerConnection(
       Vertx vertx,
       NetSocketInternal so,
       Handler<HydrologicalEndpoint> endpointHandler,
       Handler<Throwable> exceptionHandler,
-      HydrologicalServerOptions options) {
+      HydrologicalServerOptions options,
+      OnlineEndpointRegistry onlineEndpoints) {
     this.vertx = vertx;
     this.so = so;
     this.chctx = so.channelHandlerContext();
     this.endpointHandler = endpointHandler;
     this.exceptionHandler = exceptionHandler;
     this.options = options;
+    this.onlineEndpoints = onlineEndpoints;
   }
 
 
@@ -75,6 +80,7 @@ public class HydrologicalServerConnection {
         options.getCentralStationAddress(),
         options.isM2LinkMode(),
         options.getFrameEndType());
+    this.onlineEndpoints.register(this.endpoint);
     this.endpointHandler.handle(this.endpoint);
     this.so.exceptionHandler(t -> this.endpoint.handleException(t));
     this.so.closeHandler(v -> {
@@ -92,6 +98,7 @@ public class HydrologicalServerConnection {
   public void handleClose() {
     synchronized (this.so) {
       this.checkEndpoint();
+      this.onlineEndpoints.unregister(this.endpoint);
       this.endpoint.handleClose(endpoint);
     }
   }

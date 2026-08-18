@@ -1,5 +1,4 @@
-# This workflow will build a package using Maven and then publish it to GitHub packages when a release is created
-# For more information see: https://github.com/actions/setup-java/blob/main/docs/advanced-usage.md#apache-maven-with-a-settings-path
+# Build and publish a release to Maven Central through the Central Publisher Portal.
 
 name: Maven Deployment
 
@@ -29,9 +28,9 @@ jobs:
         gpg-private-key: ${{ secrets.MAVEN_GPG_PRIVATE_KEY }}
         gpg-passphrase: MAVEN_GPG_PASSPHRASE
 
-    - name: Publish to ossrh Apache Maven
-      run: mvn deploy
+    - name: Publish to Maven Central
+      run: mvn -B deploy
       env:
-        OSSRH_USERNAME: ${{ secrets.OSSRH_USERNAME }}
-        OSSRH_TOKEN: ${{ secrets.OSSRH_TOKEN }}
+        CENTRAL_USERNAME: ${{ secrets.OSSRH_USERNAME }}
+        CENTRAL_TOKEN: ${{ secrets.OSSRH_TOKEN }}
         MAVEN_GPG_PASSPHRASE: ${{ secrets.GPG_PASSPHRASE }}

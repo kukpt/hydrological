@@ -24,6 +24,11 @@ public class OnlineEndpointRegistryTest {
 
     registry.register(oldConnection);
     registry.register(newConnection);
+
+    assertEquals(1, oldConnection.closeCount);
+    assertEquals(0, newConnection.closeCount);
+
+    // Closing the replaced connection must not unregister the replacement.
     registry.unregister(oldConnection);
 
     assertSame(newConnection, registry.get("station-1"));
@@ -34,12 +39,25 @@ public class OnlineEndpointRegistryTest {
     assertNull(registry.get("station-1"));
   }
 
+  @Test
+  public void doesNotCloseEndpointWhenSameInstanceIsRegisteredAgain() {
+    OnlineEndpointRegistry registry = new OnlineEndpointRegistry();
+    StubEndpoint connection = new StubEndpoint("station-1", 1001);
+
+    registry.register(connection);
+    registry.register(connection);
+
+    assertEquals(0, connection.closeCount);
+    assertSame(connection, registry.get("station-1"));
+  }
+
   private static final class StubEndpoint implements HydrologicalEndpoint {
     private final String id;
     private final int port;
+    private int closeCount;
 
     private StubEndpoint(String id, int port) { this.id = id; this.port = port; }
-    @Override public void close() {}
+    @Override public void close() { closeCount++; }
     @Override public SocketAddress remoteAddress() { return SocketAddress.inetSocketAddress(port, "127.0.0.1"); }
     @Override public SocketAddress localAddress() { return SocketAddress.inetSocketAddress(11883, "127.0.0.1"); }
     @Override public String endpointId() { return id; }

@@ -1,4 +1,11 @@
-# sl651
+# Hydrological Protocols
+
+本仓库采用 Maven 多模块结构：
+
+- `sl651`：SL651 水文监测数据通信规约服务端与编解码库。
+- `sl427`：SL427 水资源监测数据传输规约模块（当前为实现骨架）。
+
+## SL651
 
 `sl651` 是一个基于 Vert.x 和 Netty 的 SL651 水文协议服务端/编解码库，用于接收、解析和响应遥测终端上报的水文报文。
 
@@ -70,7 +77,7 @@ mvn test
 <dependency>
   <groupId>io.github.kukpt</groupId>
   <artifactId>sl651</artifactId>
-  <version>1.0.5.CR7</version>
+  <version>1.0.5.CR9</version>
 </dependency>
 ```
 
@@ -378,7 +385,7 @@ GET /private/messages?endpointId=<endpointId>&date=2026-07-24&page=1&pageSize=20
 ## 项目结构
 
 ```text
-src/main/java/io/github/kukpt/sl651
+sl651/src/main/java/io/github/kukpt/sl651
 ├── HydrologicalServer.java          # 服务端接口
 ├── HydrologicalEndpoint.java        # 连接端点接口
 ├── HydrologicalServerOptions.java   # 服务端与协议配置
@@ -395,7 +402,7 @@ src/main/java/io/github/kukpt/sl651
 测试用例位于：
 
 ```text
-src/test/java/io/github/kukpt/sl651
+sl651/src/test/java/io/github/kukpt/sl651
 ```
 
 其中 `ServerDecodeTest` 展示了通过 TCP 客户端发送十六进制水文报文并在服务端完成解析的流程。

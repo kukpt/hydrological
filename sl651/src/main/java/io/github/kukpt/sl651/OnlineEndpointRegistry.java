@@ -18,7 +18,11 @@ public class OnlineEndpointRegistry {
   private final ConcurrentMap<String, Entry> endpoints = new ConcurrentHashMap<>();
 
   public void register(HydrologicalEndpoint endpoint) {
-    endpoints.put(endpoint.endpointId(), new Entry(endpoint, LocalDateTime.now()));
+    Entry previous = endpoints.put(
+      endpoint.endpointId(), new Entry(endpoint, LocalDateTime.now()));
+    if (previous != null && previous.endpoint != endpoint) {
+      previous.endpoint.close();
+    }
   }
 
   public void unregister(HydrologicalEndpoint endpoint) {

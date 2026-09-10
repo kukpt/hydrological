@@ -1,0 +1,20 @@
+package io.github.kukpt.sl651.codec;
+
+import io.github.kukpt.sl651.utils.FrameEndType;
+import io.github.kukpt.sl651.utils.Sl651CodecUtils;
+import io.netty.handler.codec.DecoderResult;
+
+public class Sl651MessageFactory {
+
+  public static DownstreamMessage createM2Ack(MessageHeader header, int streamId, FrameEndType ft) {
+    return new DownstreamMessage(header, new M2LinkModeAckMessage(streamId), ft.value());
+  }
+
+  public static UpstreamMessage newMessage(MessageHeader header, Sl651Payload payload, short frameEnd, int crcCode) {
+    return new UpstreamMessage(header, payload, DecoderResult.SUCCESS, frameEnd);
+  }
+
+  public static UpstreamMessage newInvalidMessage(MessageHeader header, Throwable cause) {
+    return new UpstreamMessage(header, null, DecoderResult.failure(cause), (short) 0);
+  }
+}

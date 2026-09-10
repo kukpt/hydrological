@@ -2,7 +2,7 @@ package io.github.kukpt.sl651.message;
 
 import io.github.kukpt.sl651.codec.ObservationTime;
 import io.github.kukpt.sl651.codec.ReportTime;
-import io.github.kukpt.sl651.utils.HydroLogicalUtils;
+import io.github.kukpt.sl651.utils.Sl651CodecUtils;
 import io.netty.buffer.ByteBuf;
 
 public class FixedBodyMessage implements IMessageBody {
@@ -43,10 +43,10 @@ public class FixedBodyMessage implements IMessageBody {
 
   public FixedBodyMessage(ByteBuf byteBuf) {
     this.streamId = byteBuf.readUnsignedShort();// stream id
-    this.reportTime = HydroLogicalUtils.readReportTimeStr(byteBuf);
-    this.telemetryStationAddress = HydroLogicalUtils.readTelemetryStationAddressSkipElementId(byteBuf);
+    this.reportTime = Sl651CodecUtils.readReportTimeStr(byteBuf);
+    this.telemetryStationAddress = Sl651CodecUtils.readTelemetryStationAddressSkipElementId(byteBuf);
     this.classificationCode = byteBuf.readUnsignedByte();// 分类码
-    this.observationTime = HydroLogicalUtils.readObservationTimeSkipElementId(byteBuf);
+    this.observationTime = Sl651CodecUtils.readObservationTimeSkipElementId(byteBuf);
   }
 
   @Override

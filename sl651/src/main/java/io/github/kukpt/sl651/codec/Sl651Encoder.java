@@ -1,0 +1,25 @@
+package io.github.kukpt.sl651.codec;
+
+import io.github.kukpt.sl651.utils.CRC16;
+import io.netty.buffer.ByteBuf;
+import io.netty.channel.ChannelHandlerContext;
+import io.netty.handler.codec.MessageToMessageEncoder;
+
+import java.util.List;
+
+public class Sl651Encoder extends MessageToMessageEncoder<DownstreamMessage> {
+
+  @Override
+  protected void encode(ChannelHandlerContext ctx, DownstreamMessage downstreamMessage, List<Object> out) throws Exception {
+    ByteBuf buf = ctx.alloc().buffer();
+    ByteBuf bodyBuf = downstreamMessage.content().getByteBuf();
+    ByteBuf headerBuf = downstreamMessage.messageHeader().downstreamBuf(bodyBuf.readableBytes());
+    buf.writeBytes(headerBuf);
+    buf.writeBytes(bodyBuf);
+    buf.writeByte(downstreamMessage.frameControlType());
+    buf.writeShort(CRC16.crc16(buf, buf.readableBytes()));
+    out.add(buf);
+    headerBuf.release();
+    bodyBuf.release();
+  }
+}

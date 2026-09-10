@@ -2,13 +2,13 @@ package io.github.kukpt.sl651.codec;
 
 
 import io.github.kukpt.sl651.message.*;
-import io.github.kukpt.sl651.utils.HydroLogicalUtils;
+import io.github.kukpt.sl651.utils.Sl651CodecUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.handler.codec.DecoderResult;
 import io.vertx.core.Handler;
 
-import static io.github.kukpt.sl651.utils.HydroLogicalUtils.ETB;
+import static io.github.kukpt.sl651.utils.Sl651CodecUtils.ETB;
 
 /**
  * @author shuo
@@ -23,7 +23,7 @@ public class UpstreamMessage {
 
   private final MessageHeader header;
 
-  private final HydrologicalPayload payload;
+  private final Sl651Payload payload;
 
   private final DecoderResult coderResult;
 
@@ -89,31 +89,35 @@ public class UpstreamMessage {
   }
 
   public void handle() {
-
+    IMessageBody body = parseBody();
     switch (this.functionType()) {
-      case HydroLogicalUtils.LINK_KEEP:
-          this.handleLinkKeepMessage(this.payload());
+      case Sl651CodecUtils.LINK_KEEP:
+          if (this.linkKeepMessageHandler != null) {
+            this.linkKeepMessageHandler.handle((LinkKeepMessage) body);
+          }
           break;
-      case HydroLogicalUtils.TEST:
-          this.handleTestMessage(this.payload());
+      case Sl651CodecUtils.TEST:
+          if (this.testMessageHandler != null) this.testMessageHandler.handle((TestMessage) body);
           break;
-        case HydroLogicalUtils.PERIOD:
-          this.handlePeriodMessage(this.payload());
+        case Sl651CodecUtils.PERIOD:
+          if (this.periodMessageHandler != null) this.periodMessageHandler.handle((PeriodMessage) body);
           break;
-        case HydroLogicalUtils.TIMING:
-          this.handlerTimingMessage(this.payload());
+        case Sl651CodecUtils.TIMING:
+          if (this.timingMessageHandler != null) this.timingMessageHandler.handle((TimingMessage) body);
           break;
-        case HydroLogicalUtils.ADDITIONAL:
-          this.handleAdditionalMessage(this.payload());
+        case Sl651CodecUtils.ADDITIONAL:
+          if (this.additionalMessageHandler != null) this.additionalMessageHandler.handle((AdditionalMessage) body);
           break;
-        case HydroLogicalUtils.HOURLY:
-          this.handleHourlyMessage(this.payload());
+        case Sl651CodecUtils.HOURLY:
+          if (this.hourlyMessageHandler != null) this.hourlyMessageHandler.handle((HourlyMessage) body);
           break;
-        case HydroLogicalUtils.PICTURE:
-          this.handlePictureMessage(this.payload());
+        case Sl651CodecUtils.PICTURE:
+          if (this.pictureMessageHandler != null) this.pictureMessageHandler.handle((PictureMessage) body);
           break;
         case 0x4C:
-          this.handlePumpStationControlResponseMessage(this.payload());
+          if (this.pumpStationControlResponseHandler != null) {
+            this.pumpStationControlResponseHandler.handle((PumpStationControlResponseMessage) body);
+          }
           break;
         default:
           this.handleByteBuf(this.payload());
@@ -122,81 +126,48 @@ public class UpstreamMessage {
 
   }
 
+  /** Parses the body once without invoking any application handlers. */
+  public synchronized IMessageBody parseBody() {
+    if (messageBody != null) return messageBody;
+    ByteBuf source = payload();
+    if (source == null) return null;
+    ByteBuf body = source.duplicate();
+    switch (functionType()) {
+      case Sl651CodecUtils.LINK_KEEP:
+        messageBody = new LinkKeepMessage(body);
+        break;
+      case Sl651CodecUtils.TEST:
+        messageBody = new TestMessage(body);
+        break;
+      case Sl651CodecUtils.PERIOD:
+        messageBody = new PeriodMessage(body);
+        break;
+      case Sl651CodecUtils.TIMING:
+        messageBody = new TimingMessage(body);
+        break;
+      case Sl651CodecUtils.ADDITIONAL:
+        messageBody = new AdditionalMessage(body);
+        break;
+      case Sl651CodecUtils.HOURLY:
+        messageBody = new HourlyMessage(body);
+        break;
+      case Sl651CodecUtils.PICTURE:
+        messageBody = new PictureMessage(body);
+        break;
+      case 0x4C:
+        messageBody = new PumpStationControlResponseMessage(body);
+        break;
+      default:
+        return null;
+    }
+    return messageBody;
+  }
+
   private void handleByteBuf(ByteBuf buffer) {
     if (this.byteBufHandler != null) {
       this.byteBufHandler.handle(buffer);
     }
   }
-  private void handlePictureMessage(ByteBuf buffer) {
-    PictureMessage messageBody = new PictureMessage(buffer);
-    this.messageBody = messageBody;
-    if (this.pictureMessageHandler != null) {
-      this.pictureMessageHandler.handle(messageBody);
-    }
-  }
-
-  private void handlePumpStationControlResponseMessage(ByteBuf buffer) {
-    if (this.messageBody instanceof PumpStationControlResponseMessage) {
-      if (this.pumpStationControlResponseHandler != null) {
-        this.pumpStationControlResponseHandler.handle((PumpStationControlResponseMessage) this.messageBody);
-      }
-      return;
-    }
-    PumpStationControlResponseMessage messageBody = new PumpStationControlResponseMessage(buffer);
-    this.messageBody = messageBody;
-    if (this.pumpStationControlResponseHandler != null) {
-      this.pumpStationControlResponseHandler.handle(messageBody);
-    }
-  }
-
-  private void handleLinkKeepMessage(ByteBuf payload) {
-    LinkKeepMessage messageBody = new LinkKeepMessage(payload);
-    this.messageBody = messageBody;
-    if (this.linkKeepMessageHandler != null) {
-      this.linkKeepMessageHandler.handle(messageBody);
-    }
-  }
-
-  private void handleHourlyMessage(ByteBuf payload) {
-    HourlyMessage messageBody = new HourlyMessage(payload);
-    this.messageBody = messageBody;
-    if (this.hourlyMessageHandler != null) {
-      this.hourlyMessageHandler.handle(messageBody);
-    }
-  }
-
-  private void handleAdditionalMessage(ByteBuf payload) {
-    AdditionalMessage messageBody = new AdditionalMessage(payload);
-    this.messageBody = messageBody;
-    if (this.additionalMessageHandler != null) {
-      this.additionalMessageHandler.handle(messageBody);
-    }
-  }
-
-  private void handlerTimingMessage(ByteBuf payload) {
-    TimingMessage messageBody = new TimingMessage(payload);
-    this.messageBody = messageBody;
-    if (this.timingMessageHandler != null) {
-      this.timingMessageHandler.handle(messageBody);
-    }
-  }
-
-  private void handlePeriodMessage(ByteBuf payload) {
-    PeriodMessage messageBody = new PeriodMessage(payload);
-    this.messageBody = messageBody;
-    if (this.periodMessageHandler != null) {
-      this.periodMessageHandler.handle(messageBody);
-    }
-  }
-
-  private void handleTestMessage(ByteBuf payload) {
-    TestMessage messageBody = new TestMessage(payload);
-    this.messageBody = messageBody;
-    if (this.testMessageHandler != null) {
-      this.testMessageHandler.handle(messageBody);
-    }
-  }
-
   /**
    * 报文类型
    *
@@ -260,11 +231,11 @@ public class UpstreamMessage {
     if (coderResult.isSuccess()) {
       return true;
     }
-    throw new IllegalStateException("Hydrological Server decode error! " + coderResult.cause().getMessage());
+    throw new IllegalStateException("SL651 server decode error! " + coderResult.cause().getMessage());
   }
 
 
-  UpstreamMessage(MessageHeader header, HydrologicalPayload payload, DecoderResult coderResult, short frameEnd) {
+  UpstreamMessage(MessageHeader header, Sl651Payload payload, DecoderResult coderResult, short frameEnd) {
     this.header = header;
     this.payload = payload;
     this.coderResult = coderResult;
@@ -284,7 +255,7 @@ public class UpstreamMessage {
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("HydrologicalMessage{");
+    final StringBuilder sb = new StringBuilder("Sl651Message{");
     sb.append("header=").append(header);
     byte[] bs = new byte[this.payload().readableBytes()];
     this.payload().getBytes(0, bs);

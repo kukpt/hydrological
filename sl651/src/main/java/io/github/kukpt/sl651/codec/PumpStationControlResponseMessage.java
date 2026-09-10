@@ -1,7 +1,7 @@
 package io.github.kukpt.sl651.codec;
 
 import io.github.kukpt.sl651.message.IMessageBody;
-import io.github.kukpt.sl651.utils.HydroLogicalUtils;
+import io.github.kukpt.sl651.utils.Sl651CodecUtils;
 import io.netty.buffer.ByteBuf;
 
 /**
@@ -51,8 +51,8 @@ public class PumpStationControlResponseMessage implements IMessageBody {
 
   public PumpStationControlResponseMessage(ByteBuf byteBuf) {
     this.streamId = byteBuf.readUnsignedShort();
-    this.reportTime = HydroLogicalUtils.readReportTimeStr(byteBuf);
-    this.telemetryStationAddress = HydroLogicalUtils.readTelemetryStationAddressSkipElementId(byteBuf);
+    this.reportTime = Sl651CodecUtils.readReportTimeStr(byteBuf);
+    this.telemetryStationAddress = Sl651CodecUtils.readTelemetryStationAddressSkipElementId(byteBuf);
     this.length = byteBuf.readUnsignedByte();
     this.command = byteBuf.readUnsignedByte();
   }

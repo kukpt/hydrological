@@ -16,22 +16,22 @@ public class ServerDecodeBase {
 
   protected final int port = 11883;
 
-  private Handler<HydrologicalEndpoint> hydrologicalEndpointHandler;
+  private Handler<Sl651Endpoint> hydrologicalEndpointHandler;
 
   Vertx vertx = Vertx.vertx();
 
-  public void setUp(Handler<HydrologicalEndpoint> handler) {
-    HydrologicalServerOptions option = new HydrologicalServerOptions().setPort(port);
+  public void setUp(Handler<Sl651Endpoint> handler) {
+    Sl651ServerOptions option = new Sl651ServerOptions().setPort(port);
     option.setLogActivity(true);
     try {
-      HydrologicalServer.create(vertx, option)
+      Sl651Server.create(vertx, option)
                         .endpointHandler(handler)
                         .listen()
                         .toCompletionStage()
                         .toCompletableFuture()
                         .get(3, TimeUnit.SECONDS);
     } catch (Exception e) {
-      throw new IllegalStateException("Hydrological server failed to start", e);
+      throw new IllegalStateException("SL651 server failed to start", e);
     }
   }
 

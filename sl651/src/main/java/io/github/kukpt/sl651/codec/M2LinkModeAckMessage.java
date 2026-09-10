@@ -1,6 +1,6 @@
 package io.github.kukpt.sl651.codec;
 
-import io.github.kukpt.sl651.utils.HydroLogicalUtils;
+import io.github.kukpt.sl651.utils.Sl651CodecUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 
@@ -30,7 +30,7 @@ public class M2LinkModeAckMessage implements DownstreamMessagePayload, StreamIde
 
   @Override
   public ByteBuf getByteBuf() {
-    byte[] reportTime = HydroLogicalUtils.strToBcd(reportTime().reportTimeStr());
+    byte[] reportTime = Sl651CodecUtils.strToBcd(reportTime().reportTimeStr());
     ByteBuf buf = Unpooled.buffer();
     buf.writeShort(streamId);
     buf.writeBytes(reportTime);

@@ -3,7 +3,11 @@
 本仓库采用 Maven 多模块结构：
 
 - `sl651`：SL651 水文监测数据通信规约服务端与编解码库。
-- `sl427`：SL427 水资源监测数据传输规约模块（当前为实现骨架）。
+- `common`：SL651/SL427 共用的分阶段日志、原始报文模型和持久化存储。
+- `sl427`：SL/T 427-2021 水资源监测数据传输规约服务端与解析库。
+
+SL427 解析器的帧结构、Schema/Context、AFN 分派、B0/C0 解码和分阶段实施方案见 [SL427 解析器详细设计](sl427/doc/SL427_PARSER_DESIGN.md)。
+使用方法和当前支持范围见 [SL427 模块说明](sl427/README.md)。
 
 ## SL651
 
@@ -86,9 +90,9 @@ mvn test
 下面示例启动一个 SL651 TCP 服务端，监听 `11883` 端口：
 
 ```java
-import io.github.kukpt.sl651.HydrologicalEndpoint;
-import io.github.kukpt.sl651.HydrologicalServer;
-import io.github.kukpt.sl651.HydrologicalServerOptions;
+import io.github.kukpt.sl651.Sl651Endpoint;
+import io.github.kukpt.sl651.Sl651Server;
+import io.github.kukpt.sl651.Sl651ServerOptions;
 import io.vertx.core.Vertx;
 
 public class ServerExample {
@@ -96,10 +100,10 @@ public class ServerExample {
   public static void main(String[] args) {
     Vertx vertx = Vertx.vertx();
 
-    HydrologicalServerOptions options = new HydrologicalServerOptions()
+    Sl651ServerOptions options = new Sl651ServerOptions()
         .setPort(11883);
 
-    HydrologicalServer.create(vertx, options)
+    Sl651Server.create(vertx, options)
         .endpointHandler(ServerExample::handleEndpoint)
         .exceptionHandler(Throwable::printStackTrace)
         .listen()
@@ -107,7 +111,7 @@ public class ServerExample {
         .onFailure(Throwable::printStackTrace);
   }
 
-  private static void handleEndpoint(HydrologicalEndpoint endpoint) {
+  private static void handleEndpoint(Sl651Endpoint endpoint) {
     System.out.println("connected: " + endpoint.remoteAddress());
 
     endpoint.messageHandler(message -> {
@@ -140,7 +144,7 @@ public class ServerExample {
 
 ## 数据下行
 
-设备连接成功后，`HydrologicalEndpoint` 可以直接发起中心站主动下行。调用方不需要手动拼接 `MessageHeader`、CRC 或报文结束控制符，端点会使用当前连接的遥测站地址、中心站地址和协议密码自动构造下行报文。
+设备连接成功后，`Sl651Endpoint` 可以直接发起中心站主动下行。调用方不需要手动拼接 `MessageHeader`、CRC 或报文结束控制符，端点会使用当前连接的遥测站地址、中心站地址和协议密码自动构造下行报文。
 
 ### 通用下行
 
@@ -168,7 +172,7 @@ endpoint.downstream(
 endpoint.downstream(
     0x4C,
     RawDownstreamPayload.fromHex("00002608111200000101"),
-    HydroLogicalUtils.ENQ,
+    Sl651CodecUtils.ENQ,
     3
 );
 ```
@@ -233,7 +237,7 @@ endpoint.pumpStationControl((short) 1, 3)
 
 ## 配置项
 
-`HydrologicalServerOptions` 继承自 Vert.x `NetServerOptions`，除 TCP 服务端配置外，还提供以下协议相关配置：
+`Sl651ServerOptions` 继承自 Vert.x `NetServerOptions`，除 TCP 服务端配置外，还提供以下协议相关配置：
 
 | 配置项 | 默认值 | 说明 |
 | --- | --- | --- |
@@ -243,8 +247,8 @@ endpoint.pumpStationControl((short) 1, 3)
 | `protocolPassword` | `0x1234` | 协议密码 |
 | `timeoutOnConnect` | `180` | 连接空闲超时时间，单位为秒 |
 | `frameEndType` | `FrameEndType.ESC_MODE` | 下行报文结束控制方式 |
-| `enableMetricsWeb` | `false` | 是否启用 Web 调试页面 |
-| `enableHttpProxy` | `false` | 是否在 SL651 TCP 端口上启用 HTTP 协议嗅探和代理；仅在 `enableMetricsWeb` 同时启用时生效 |
+| `enableMetricsWeb` | `false` | 是否启动共享的 `monitoring-web` |
+| `enableHttpProxy` | `false` | 是否在 SL651 TCP 端口上识别 HTTP 并代理到共享监控页面 |
 | `metricsWebUserName` | 读取 `HY_METRICS_USERNAME` | Web 调试页面用户名 |
 | `metricsWebPassword` | 读取 `HY_METRICS_PASSWORD` | Web 调试页面密码，启用 Web 调试时至少 12 位 |
 | `metricsLogBaseDir` | `${user.dir}/hy-data` | 报文日志保存目录 |
@@ -252,7 +256,7 @@ endpoint.pumpStationControl((short) 1, 3)
 示例：
 
 ```java
-HydrologicalServerOptions options = new HydrologicalServerOptions()
+Sl651ServerOptions options = new Sl651ServerOptions()
     .setHost("0.0.0.0")
     .setPort(11883)
     .setProtocolPassword(0x1234)
@@ -266,12 +270,15 @@ HydrologicalServerOptions options = new HydrologicalServerOptions()
     .setMetricsLogBaseDir("/tmp/hy_logs");
 ```
 
-## Web 调试页面
+## 共享 Web 监控页面
 
-启用 `enableMetricsWeb(true)` 后，服务会额外启动一个 HTTP Web 服务。该 Web 服务监听随机可用端口，启动日志中会打印端口：
+Web 实现已从 SL651 抽离到独立的 `monitoring-web` 模块。SL651 和 SL427 在同一个
+`Vertx` 实例中运行时，共用一个 HTTP 服务、一套登录和一份报文存储。
+任意一个 Server 配置 `enableMetricsWeb(true)` 即可启动，两个 Server 同时启用时必须使用相同账号密码。
+内部 Web 默认只监听 `127.0.0.1` 的随机可用端口，启动日志中会打印端口：
 
 ```text
-Metrics Web Server started. port: <port>
+Monitoring Web Server started on 127.0.0.1:<port>
 ```
 
 Web 调试页面不再提供固定默认账号密码。启用前必须设置账号和密码，否则服务会拒绝启动：
@@ -284,7 +291,7 @@ export HY_METRICS_PASSWORD='change-this-to-a-long-random-password'
 也可以通过代码显式设置：
 
 ```java
-new HydrologicalServerOptions()
+new Sl651ServerOptions()
     .enableMetricsWeb(true)
     .setMetricsWebUserName("admin")
     .setMetricsWebPassword("change-this-to-a-long-random-password");
@@ -296,7 +303,9 @@ new HydrologicalServerOptions()
 http://127.0.0.1:<Web 服务随机端口>/hp
 ```
 
-显式设置 `enableHttpProxy(true)` 启用嗅探代理后，Web 页面与 SL651 规约服务共用 TCP 端口，访问地址为：
+显式设置 `enableHttpProxy(true)` 后，协议端口会识别常见 HTTP 方法，并转发到这一个
+共享 Web 服务。SL651 和 SL427 都支持该选项，两个端口可以同时启用，但推荐只暴露一个入口。
+在 SL651 端口启用时，访问地址为：
 
 ```text
 http://<SL651 服务主机>:<规约 TCP 端口>/hp
@@ -304,7 +313,9 @@ http://<SL651 服务主机>:<规约 TCP 端口>/hp
 
 例如规约服务监听 `11883` 端口时，访问 `http://127.0.0.1:11883/hp`。
 
-Web 调试页面支持读取端点报文记录，并提供独立的数据下行页面。登录后可从消息中心点击“数据下行”，或直接访问：
+Web 监控页面统一展示 SL651 和 SL427 报文、协议类型及在线端点。数据下行是
+SL651 专属功能，下行页面只会列出 SL651 端点；SL427 当前为只读监控。
+登录后可从消息中心点击“数据下行”，或直接访问：
 
 ```text
 /private/downstream.html
@@ -385,18 +396,10 @@ GET /private/messages?endpointId=<endpointId>&date=2026-07-24&page=1&pageSize=20
 ## 项目结构
 
 ```text
-sl651/src/main/java/io/github/kukpt/sl651
-├── HydrologicalServer.java          # 服务端接口
-├── HydrologicalEndpoint.java        # 连接端点接口
-├── HydrologicalServerOptions.java   # 服务端与协议配置
-├── MainVerticle.java                # 本地启动示例
-├── MetricsWebVerticle.java          # Web 调试服务
-├── OnlineEndpointRegistry.java      # 当前进程在线端点注册表
-├── codec/                           # 协议编解码、消息头、上下行报文
-├── impl/                            # 服务端和连接实现
-├── message/                         # 上行报文正文模型
-├── metrics/                         # 调试、流量监控和报文存储
-└── utils/                           # CRC、协议常量和工具类
+common/                         # 公共报文记录与存储
+monitoring-web/                 # 共享 Web、Provider SPI 和 HTTP 代理
+sl651/                          # SL651 Server、Endpoint 与监控 Provider
+sl427/                          # SL427 Server、Endpoint 与监控 Provider
 ```
 
 测试用例位于：

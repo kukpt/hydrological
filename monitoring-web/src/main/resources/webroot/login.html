@@ -1,0 +1,18 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Hydrological Monitoring Login</title>
+    <style>body { font-family: sans-serif; text-align: center; padding-top: 50px; }</style>
+</head>
+<body>
+<h2>Admin Login</h2>
+<form action="/do-login" method="post">
+    <input type="text" name="username" placeholder="name" required><br><br>
+    <input type="password" name="password" placeholder="pwd" required><br><br>
+    <button type="submit">login</button>
+</form>
+<script>
+    if(window.location.search.includes('error')) alert('err! retry!');
+</script>
+</body>
+</html>

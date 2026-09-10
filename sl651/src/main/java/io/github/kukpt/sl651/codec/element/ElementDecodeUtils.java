@@ -1,7 +1,7 @@
 package io.github.kukpt.sl651.codec.element;
 
 import io.github.kukpt.sl651.codec.TimeStep;
-import io.github.kukpt.sl651.utils.HydroLogicalUtils;
+import io.github.kukpt.sl651.utils.Sl651CodecUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.handler.codec.DecoderException;
 import io.vertx.core.impl.logging.Logger;
@@ -46,11 +46,11 @@ public final class ElementDecodeUtils {
       // 观测时间
       case 0xF0:
         // value type String
-        return new ElementResult(ElementValueType.STRING, HydroLogicalUtils.readObservationTimeStr(byteBuf).toString(), elementId, 5);
+        return new ElementResult(ElementValueType.STRING, Sl651CodecUtils.readObservationTimeStr(byteBuf).toString(), elementId, 5);
       // 遥测站地址
       case 0xF1:
         // value type String
-        return new ElementResult(ElementValueType.STRING, HydroLogicalUtils.readTelemetryStationAddress(byteBuf).toString(), elementId, 5);
+        return new ElementResult(ElementValueType.STRING, Sl651CodecUtils.readTelemetryStationAddress(byteBuf).toString(), elementId, 5);
       case 0xF2:
         throw new DecoderException("the decoder is not supported [F2]");
       case 0xF3:
@@ -101,7 +101,7 @@ public final class ElementDecodeUtils {
       default:
         // value type double
         return new ElementResult(ElementValueType.DOUBLE,
-        HydroLogicalUtils.readBcdNumber(byteBuf, elementId.readLength(), elementId.numberPoint()), elementId,
+        Sl651CodecUtils.readBcdNumber(byteBuf, elementId.readLength(), elementId.numberPoint()), elementId,
         elementId.readLength());
     }
   }
@@ -110,7 +110,7 @@ public final class ElementDecodeUtils {
     double[] doubles = new double[values.length];
     for (int i = 0; i < values.length; i++) {
       if (values[i] > 0) {
-        doubles[i] = (double) values[i] / HydroLogicalUtils.ptn(numberPoint);
+        doubles[i] = (double) values[i] / Sl651CodecUtils.ptn(numberPoint);
       } else {
         doubles[i] = 0;
       }

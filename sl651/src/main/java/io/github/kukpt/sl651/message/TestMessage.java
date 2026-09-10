@@ -6,7 +6,7 @@ import io.netty.buffer.ByteBuf;
 
 import java.util.Collection;
 
-public class TestMessage extends FixedBodyMessage{
+public class TestMessage extends FixedBodyMessage implements ElementMessage {
 
   private final Collection<ElementResult> elementResults;
 

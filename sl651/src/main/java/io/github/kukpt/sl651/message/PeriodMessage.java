@@ -9,7 +9,7 @@ import io.netty.buffer.ByteBuf;
 import java.util.ArrayList;
 import java.util.Collection;
 
-public class PeriodMessage extends FixedBodyMessage {
+public class PeriodMessage extends FixedBodyMessage implements ElementMessage {
 
 
   private final Collection<ElementResult> elementResults = new ArrayList<>();

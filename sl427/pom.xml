@@ -7,15 +7,34 @@
   <parent>
     <groupId>io.github.kukpt</groupId>
     <artifactId>hydrological-parent</artifactId>
-    <version>1.0.5.CR9</version>
+    <version>1.1.0.CR1</version>
   </parent>
 
   <artifactId>sl427</artifactId>
   <name>sl427</name>
   <description>SL 427 water resources monitoring data transmission protocol</description>
 
-  <properties>
-    <maven.compiler.source>1.8</maven.compiler.source>
-    <maven.compiler.target>1.8</maven.compiler.target>
-  </properties>
+  <dependencies>
+    <dependency>
+      <groupId>io.github.kukpt</groupId>
+      <artifactId>hydrological-common</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.github.kukpt</groupId>
+      <artifactId>monitoring-web</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-core</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>io.vertx</groupId>
+      <artifactId>vertx-codegen</artifactId>
+    </dependency>
+    <dependency>
+      <groupId>junit</groupId>
+      <artifactId>junit</artifactId>
+      <scope>test</scope>
+    </dependency>
+  </dependencies>
 </project>

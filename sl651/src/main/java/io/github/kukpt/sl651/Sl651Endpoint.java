@@ -1,0 +1,60 @@
+package io.github.kukpt.sl651;
+
+import io.github.kukpt.sl651.codec.*;
+import io.vertx.core.Future;
+import io.vertx.core.Handler;
+import io.vertx.core.net.SocketAddress;
+
+public interface Sl651Endpoint {
+
+  void close();
+
+  SocketAddress remoteAddress();
+
+  SocketAddress localAddress();
+
+  String endpointId();
+
+  int password();
+
+  Future<UpstreamMessage> request(DownstreamMessage dMsg, long timeout);
+
+  Future<UpstreamMessage> downstream(
+    int functionType,
+    DownstreamMessagePayload payload,
+    short frameControlType,
+    long timeout);
+
+  Future<UpstreamMessage> downstream(
+    int functionType,
+    DownstreamMessagePayload payload,
+    long timeout);
+
+  Future<UpstreamMessage> downstream(
+    FunctionType functionType,
+    DownstreamMessagePayload payload,
+    short frameControlType,
+    long timeout);
+
+  Future<UpstreamMessage> downstream(
+    FunctionType functionType,
+    DownstreamMessagePayload payload,
+    long timeout);
+
+  Future<PumpStationControlResponseMessage> pumpStationControl(short command, long timeout);
+
+  Future<PumpStationControlResponseMessage> pumpStationControl(short command);
+
+  Sl651Endpoint messageHandler(Handler<UpstreamMessage> messageHandler);
+
+  Sl651Endpoint closeHandler(Handler<Sl651Endpoint> closeHandler);
+
+  Sl651Endpoint exceptionHandler(Handler<Throwable> handler);
+//  /**
+//   * 泵站控制
+//   * @param tsAddr
+//   * @param command 按照对应的数据位，0 关， 1 开。目前总共可以控制8路，实际可以拓展。
+//   * @return
+//   */
+//  Future<Integer> pumpStationControl(String tsAddr, short command) ;
+}

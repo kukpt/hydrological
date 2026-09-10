@@ -2,9 +2,9 @@ package io.github.kukpt.sl651.utils;
 
 public enum FrameEndType {
 
-  EOT_MODE(HydroLogicalUtils.EOT),
-  ACK_MODE(HydroLogicalUtils.ACK),
-  ESC_MODE(HydroLogicalUtils.ESC);
+  EOT_MODE(Sl651CodecUtils.EOT),
+  ACK_MODE(Sl651CodecUtils.ACK),
+  ESC_MODE(Sl651CodecUtils.ESC);
 
   private final short value;
 

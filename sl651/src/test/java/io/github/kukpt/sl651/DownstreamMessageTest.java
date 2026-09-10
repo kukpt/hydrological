@@ -7,7 +7,7 @@ import io.github.kukpt.sl651.codec.PumpStationControlContent;
 import io.github.kukpt.sl651.codec.RawDownstreamPayload;
 import io.github.kukpt.sl651.codec.ReportTime;
 import io.github.kukpt.sl651.utils.CRC16;
-import io.github.kukpt.sl651.utils.HydroLogicalUtils;
+import io.github.kukpt.sl651.utils.Sl651CodecUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.ByteBufUtil;
 import io.netty.buffer.Unpooled;
@@ -76,12 +76,12 @@ public class DownstreamMessageTest extends ServerDecodeBase {
       0,
       FunctionType.PUMP_CONTROL.value(),
       0,
-      HydroLogicalUtils.STX,
+      Sl651CodecUtils.STX,
       0,
       0);
     PumpStationControlContent content =
       new PumpStationControlContent(0, new ReportTime("260811120000"), (short) 1, (short) 1);
-    DownstreamMessage message = new DownstreamMessage(header, content, HydroLogicalUtils.ENQ);
+    DownstreamMessage message = new DownstreamMessage(header, content, Sl651CodecUtils.ENQ);
 
     ByteBuf buf = Unpooled.buffer();
     ByteBuf headerBuf = message.messageHeader().downstreamBuf(message.content().getByteBuf().readableBytes());
@@ -94,7 +94,7 @@ public class DownstreamMessageTest extends ServerDecodeBase {
     org.junit.Assert.assertEquals(
       "7e7e22226222220100004c800a0200002608111200000101",
       ByteBufUtil.hexDump(buf, 0, buf.readableBytes() - 3));
-    org.junit.Assert.assertEquals(HydroLogicalUtils.ENQ, buf.getUnsignedByte(buf.readableBytes() - 3));
+    org.junit.Assert.assertEquals(Sl651CodecUtils.ENQ, buf.getUnsignedByte(buf.readableBytes() - 3));
     org.junit.Assert.assertEquals(CRC16.crc16(buf, buf.readableBytes() - 2), buf.getUnsignedShort(buf.readableBytes() - 2));
 
     headerBuf.release();
@@ -142,20 +142,20 @@ public class DownstreamMessageTest extends ServerDecodeBase {
 
   private static byte[] createPumpStationControlResponse(int streamId) {
     ByteBuf buf = Unpooled.buffer();
-    buf.writeShort(HydroLogicalUtils.FRAME_START_CHARACTER);
+    buf.writeShort(Sl651CodecUtils.FRAME_START_CHARACTER);
     buf.writeByte(0x01);
-    buf.writeBytes(HydroLogicalUtils.strToBcd(STATION_ADDRESS));
+    buf.writeBytes(Sl651CodecUtils.strToBcd(STATION_ADDRESS));
     buf.writeShort(0);
     buf.writeByte(FunctionType.PUMP_CONTROL.value());
     buf.writeShort(0x0011);
-    buf.writeByte(HydroLogicalUtils.STX);
+    buf.writeByte(Sl651CodecUtils.STX);
     buf.writeShort(streamId);
-    buf.writeBytes(HydroLogicalUtils.strToBcd("260811120001"));
-    buf.writeBytes(HydroLogicalUtils.strToBcd("f1f1"));
-    buf.writeBytes(HydroLogicalUtils.strToBcd(STATION_ADDRESS));
+    buf.writeBytes(Sl651CodecUtils.strToBcd("260811120001"));
+    buf.writeBytes(Sl651CodecUtils.strToBcd("f1f1"));
+    buf.writeBytes(Sl651CodecUtils.strToBcd(STATION_ADDRESS));
     buf.writeByte(1);
     buf.writeByte(1);
-    buf.writeByte(HydroLogicalUtils.ETX);
+    buf.writeByte(Sl651CodecUtils.ETX);
     buf.writeShort(CRC16.crc16(buf, buf.readableBytes()));
     byte[] bytes = ByteBufUtil.getBytes(buf);
     buf.release();

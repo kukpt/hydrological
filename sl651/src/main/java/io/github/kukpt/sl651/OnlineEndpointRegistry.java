@@ -17,7 +17,7 @@ public class OnlineEndpointRegistry {
 
   private final ConcurrentMap<String, Entry> endpoints = new ConcurrentHashMap<>();
 
-  public void register(HydrologicalEndpoint endpoint) {
+  public void register(Sl651Endpoint endpoint) {
     Entry previous = endpoints.put(
       endpoint.endpointId(), new Entry(endpoint, LocalDateTime.now()));
     if (previous != null && previous.endpoint != endpoint) {
@@ -25,12 +25,12 @@ public class OnlineEndpointRegistry {
     }
   }
 
-  public void unregister(HydrologicalEndpoint endpoint) {
+  public void unregister(Sl651Endpoint endpoint) {
     endpoints.computeIfPresent(endpoint.endpointId(), (id, current) ->
       current.endpoint == endpoint ? null : current);
   }
 
-  public HydrologicalEndpoint get(String endpointId) {
+  public Sl651Endpoint get(String endpointId) {
     Entry entry = endpoints.get(endpointId);
     return entry == null ? null : entry.endpoint;
   }
@@ -40,7 +40,7 @@ public class OnlineEndpointRegistry {
     entries.sort(Comparator.comparing(entry -> entry.endpoint.endpointId()));
     JsonArray result = new JsonArray();
     for (Entry entry : entries) {
-      HydrologicalEndpoint endpoint = entry.endpoint;
+      Sl651Endpoint endpoint = entry.endpoint;
       result.add(new JsonObject()
         .put("endpointId", endpoint.endpointId())
         .put("remoteAddress", endpoint.remoteAddress().toString())
@@ -50,10 +50,10 @@ public class OnlineEndpointRegistry {
   }
 
   private static final class Entry {
-    private final HydrologicalEndpoint endpoint;
+    private final Sl651Endpoint endpoint;
     private final LocalDateTime connectedAt;
 
-    private Entry(HydrologicalEndpoint endpoint, LocalDateTime connectedAt) {
+    private Entry(Sl651Endpoint endpoint, LocalDateTime connectedAt) {
       this.endpoint = endpoint;
       this.connectedAt = connectedAt;
     }

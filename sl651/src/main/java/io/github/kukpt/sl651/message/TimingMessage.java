@@ -9,7 +9,7 @@ import java.util.Collection;
 import java.util.HashMap;
 import java.util.Map;
 
-public class TimingMessage extends FixedBodyMessage {
+public class TimingMessage extends FixedBodyMessage implements ElementMessage {
 
   private final Collection<ElementResult> elementResults;
 

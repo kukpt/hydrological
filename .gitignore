@@ -189,3 +189,6 @@ nbdist/
 /mvnw.cmd
 /file-uploads/
 /hy-data/
+/**/hy-data/
+/sl427/doc/SLT 427-2021.pdf
+/sl651/doc/SL651-2014.pdf

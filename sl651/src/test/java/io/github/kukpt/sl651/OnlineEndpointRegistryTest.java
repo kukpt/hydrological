@@ -51,7 +51,7 @@ public class OnlineEndpointRegistryTest {
     assertSame(connection, registry.get("station-1"));
   }
 
-  private static final class StubEndpoint implements HydrologicalEndpoint {
+  private static final class StubEndpoint implements Sl651Endpoint {
     private final String id;
     private final int port;
     private int closeCount;
@@ -69,8 +69,8 @@ public class OnlineEndpointRegistryTest {
     @Override public Future<UpstreamMessage> downstream(FunctionType type, DownstreamMessagePayload payload, long timeout) { return Future.failedFuture("unused"); }
     @Override public Future<PumpStationControlResponseMessage> pumpStationControl(short command, long timeout) { return Future.failedFuture("unused"); }
     @Override public Future<PumpStationControlResponseMessage> pumpStationControl(short command) { return Future.failedFuture("unused"); }
-    @Override public HydrologicalEndpoint messageHandler(Handler<UpstreamMessage> handler) { return this; }
-    @Override public HydrologicalEndpoint closeHandler(Handler<HydrologicalEndpoint> handler) { return this; }
-    @Override public HydrologicalEndpoint exceptionHandler(Handler<Throwable> handler) { return this; }
+    @Override public Sl651Endpoint messageHandler(Handler<UpstreamMessage> handler) { return this; }
+    @Override public Sl651Endpoint closeHandler(Handler<Sl651Endpoint> handler) { return this; }
+    @Override public Sl651Endpoint exceptionHandler(Handler<Throwable> handler) { return this; }
   }
 }

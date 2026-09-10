@@ -1,23 +1,23 @@
 package io.github.kukpt.sl651.metrics;
 
-import com.fasterxml.jackson.annotation.JsonFormat;
-import io.github.kukpt.sl651.HydrologicalEndpoint;
-import io.vertx.core.buffer.Buffer;
+import io.github.kukpt.hydrological.common.ProtocolTrafficRecord;
+import io.github.kukpt.hydrological.common.ProtocolType;
+import io.github.kukpt.hydrological.common.TrafficDirection;
+import io.github.kukpt.sl651.Sl651Endpoint;
 import io.vertx.core.json.JsonObject;
 
 import java.time.LocalDateTime;
-import java.time.format.DateTimeFormatter;
 
+/** @deprecated use {@link ProtocolTrafficRecord}; retained for source compatibility. */
+@Deprecated
 public class TrafficMonitor {
 
-  private final static DateTimeFormatter df = DateTimeFormatter.ofPattern("yyyy-MM-dd HH:mm:ss.SSS");
+  private final ProtocolTrafficRecord delegate;
 
-  public TrafficMonitor(TYPE type, HydrologicalEndpoint endpoint, String payload) {
+  public TrafficMonitor(TYPE type, Sl651Endpoint endpoint, String payload) {
     this.type = type;
-    this.endpointId = endpoint.endpointId();
-    this.remoteAddr = endpoint.remoteAddress().toString();
-    this.payload = payload;
-    this.recordedTime = LocalDateTime.now();
+    this.delegate = new ProtocolTrafficRecord(ProtocolType.SL651,
+      TrafficDirection.valueOf(type.name()), endpoint.endpointId(), endpoint.remoteAddress().toString(), payload);
   }
 
   public enum TYPE {
@@ -27,55 +27,32 @@ public class TrafficMonitor {
 
   public TYPE type;
 
-  private String endpointId;
-
-  private String remoteAddr;
-
-  private String payload;
-
-  @JsonFormat(
-  pattern = "yyyy-MM-dd HH:mm:ss.SSS",
-  timezone = "UTC")
-  private LocalDateTime recordedTime;
-
   public TYPE getType() {
     return type;
   }
 
   public String getEndpointId() {
-    return endpointId;
+    return delegate.getEndpointId();
   }
 
   public String getRemoteAddr() {
-    return remoteAddr;
+    return delegate.getRemoteAddr();
   }
 
   public String getPayload() {
-    return payload;
+    return delegate.getPayload();
   }
 
   public LocalDateTime getRecordedTime() {
-    return recordedTime;
+    return delegate.getRecordedTime();
   }
 
   public JsonObject toJson() {
-    return new JsonObject()
-        .put("type", type.name())
-        .put("endpointId", endpointId)
-        .put("remoteAddr", remoteAddr)
-        .put("payload", payload)
-        .put("recordedTime", recordedTime.toString());
+    return delegate.toJson();
   }
 
   @Override
   public String toString() {
-    final StringBuilder sb = new StringBuilder("TrafficMonitor{");
-    sb.append("type=").append(type);
-    sb.append(", endpointId='").append(endpointId).append('\'');
-    sb.append(", remoteAddr='").append(remoteAddr).append('\'');
-    sb.append(", payload='").append(payload).append('\'');
-    sb.append(", recordedTime=").append(recordedTime);
-    sb.append('}');
-    return sb.toString();
+    return delegate.toString();
   }
 }

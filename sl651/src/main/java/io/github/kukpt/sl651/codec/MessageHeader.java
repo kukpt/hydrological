@@ -1,18 +1,18 @@
 package io.github.kukpt.sl651.codec;
 
-import io.github.kukpt.sl651.utils.HydroLogicalUtils;
+import io.github.kukpt.sl651.utils.Sl651CodecUtils;
 import io.netty.buffer.ByteBuf;
 import io.netty.buffer.Unpooled;
 import io.netty.util.internal.ObjectUtil;
 
-import static io.github.kukpt.sl651.utils.HydroLogicalUtils.*;
+import static io.github.kukpt.sl651.utils.Sl651CodecUtils.*;
 
 public class MessageHeader {
 
   public ByteBuf downstreamBuf(int bodyLen) {
     ByteBuf buf = Unpooled.buffer();
     buf.writeShort(FRAME_START_CHARACTER);
-    byte[] tStationAddr = HydroLogicalUtils.strToBcd(telemetryStationAddress);
+    byte[] tStationAddr = Sl651CodecUtils.strToBcd(telemetryStationAddress);
     buf.writeBytes(tStationAddr);
     buf.writeByte(centralStationAddress);
     buf.writeShort(password);

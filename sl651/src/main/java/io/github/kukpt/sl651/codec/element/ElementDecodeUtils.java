@@ -1,18 +1,12 @@
 package io.github.kukpt.sl651.codec.element;
 
-import io.github.kukpt.sl651.codec.TimeStep;
-import io.github.kukpt.sl651.utils.Sl651CodecUtils;
 import io.netty.buffer.ByteBuf;
-import io.netty.handler.codec.DecoderException;
-import io.vertx.core.impl.logging.Logger;
-import io.vertx.core.impl.logging.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
 public final class ElementDecodeUtils {
-  private static final Logger logger = LoggerFactory.getLogger(ElementDecodeUtils.class);
 
   public static Collection<ElementResult> decodeDefaultElementResults(ByteBuf byteBuf) {
     final List<ElementResult> elementResults = new ArrayList<>();
@@ -26,46 +20,66 @@ public final class ElementDecodeUtils {
 
 
   public static ElementResult decodeElement(ByteBuf byteBuf, ElementId elementId) {
-    final int valueStartIndex = byteBuf.readerIndex();
-    try {
-      return decodeKnownElement(byteBuf, elementId);
-    } catch (Exception e) {
-      logger.error("ElementResult decoding failed!", e);
-      byteBuf.readerIndex(valueStartIndex);
-      int rawValueLength = Math.min(elementId.readLength(), byteBuf.readableBytes());
-      byte[] rawValue = new byte[rawValueLength];
-      byteBuf.readBytes(rawValue);
-      return new ElementResult(
+    ElementValueType valueType = valueType(elementId);
+    int expectedLength = valueLength(elementId);
+    int rawValueLength = Math.min(expectedLength, byteBuf.readableBytes());
+    byte[] rawValue = new byte[rawValueLength];
+    byteBuf.readBytes(rawValue);
+
+    // A truncated value cannot safely be interpreted as its declared type.
+    if (rawValueLength < expectedLength) {
+      valueType = ElementValueType.BYTE_ARRAY;
+    }
+    ElementResult result = new ElementResult(
+      valueType, rawValue, elementId, rawValueLength);
+    return canConvert(result)
+      ? result
+      : new ElementResult(
         ElementValueType.BYTE_ARRAY, rawValue, elementId, rawValueLength);
+  }
+
+  private static boolean canConvert(ElementResult result) {
+    try {
+      switch (result.valueType()) {
+        case STRING:
+          result.stringValue();
+          break;
+        case DOUBLE:
+          result.doubleValue();
+          break;
+        case DOUBLE_ARRAY:
+          result.doubleArrayValue();
+          break;
+        case TIME_STEP:
+          result.timeStepValue();
+          break;
+        case STATUS:
+          result.statusValue();
+          break;
+        case BYTE_ARRAY:
+        default:
+          break;
+      }
+      return true;
+    } catch (RuntimeException ignored) {
+      return false;
     }
   }
 
-  private static ElementResult decodeKnownElement(ByteBuf byteBuf, ElementId elementId) {
-
+  private static ElementValueType valueType(ElementId elementId) {
     switch (elementId.id()) {
-      // 观测时间
+      // 观测时间、遥测站地址
       case 0xF0:
-        // value type String
-        return new ElementResult(ElementValueType.STRING, Sl651CodecUtils.readObservationTimeStr(byteBuf).toString(), elementId, 5);
-      // 遥测站地址
       case 0xF1:
-        // value type String
-        return new ElementResult(ElementValueType.STRING, Sl651CodecUtils.readTelemetryStationAddress(byteBuf).toString(), elementId, 5);
+        return ElementValueType.STRING;
+      // 尚未支持的标准要素保留为原始字节
       case 0xF2:
-        throw new DecoderException("the decoder is not supported [F2]");
       case 0xF3:
-        throw new DecoderException("the decoder is not supported [F3]");
+      case 0xFD:
+      case 0x05:
+        return ElementValueType.BYTE_ARRAY;
+      // 1 小时内的雨量或水位序列
       case 0xF4:
-        // 1 小时内每 5 分钟时段雨量
-        //（每组雨量占 1 字节 HEX，最大值 25.4 毫米，数据中不含小数点；FFH 表示非法数据。）
-        // value type byte[]
-        if (byteBuf.readableBytes() < 12)
-          throw new DecoderException();
-        int[] f4Value = new int[12];
-        for (int i = 0; i < 12; i++) {
-          f4Value[i] = byteBuf.readUnsignedByte();
-        }
-        return new ElementResult(ElementValueType.DOUBLE_ARRAY, toDoubleArray(f4Value, 1), elementId, 12);
       case 0xF5:
       case 0xF6:
       case 0xF7:
@@ -74,48 +88,45 @@ public final class ElementDecodeUtils {
       case 0xFA:
       case 0xFB:
       case 0xFC:
-        // 1 小时内 5 分钟间隔相对水位 1
-        // (每组水位占 2 字节HEX，分辨力是为厘米，最大值为 655.34 米，数据中不含小数点；FFFFH 表示非法数据)；
-        // 对于河道、闸坝（泵）站分别表示河道水位、闸（站）上水位
-        // value type int[]
-        if (byteBuf.readableBytes() < 2 * 12)
-          throw new DecoderException();
-        int[] values = new int[12];
-        for (int i = 0; i < 12; i++) {
-          values[i] = byteBuf.readUnsignedShort();
-        }
-        return new ElementResult(ElementValueType.DOUBLE_ARRAY, toDoubleArray(values, 2), elementId, 24);
-      case 0xFD:
-        throw new DecoderException("the decoder is not supported [FD]");
+        return ElementValueType.DOUBLE_ARRAY;
+      // 时间步长码
       case 0x04:
-        // 时间步长码
-        // value type TimeStep
-        TimeStep timeStep = TimeStep.createTimeStep(byteBuf);
-        return new ElementResult(ElementValueType.TIME_STEP, timeStep, elementId, 3);
-      case 0x05:
-        throw new DecoderException("the decoder is not supported [05]");
+        return ElementValueType.TIME_STEP;
+      // 遥测站状态及报警信息
       case 0x45:
-        // 遥测站状态及报警信息 4字节HEX
-        Long status = byteBuf.readUnsignedInt();
-        return new ElementResult(ElementValueType.STATUS, status, elementId, 4);
+        return ElementValueType.STATUS;
       default:
-        // value type double
-        return new ElementResult(ElementValueType.DOUBLE,
-        Sl651CodecUtils.readBcdNumber(byteBuf, elementId.readLength(), elementId.numberPoint()), elementId,
-        elementId.readLength());
+        // 0xFFxx is a custom element identifier. Its semantics cannot be
+        // inferred from the data definition, so preserve it as bytes.
+        return elementId.id() > 0xFF
+          ? ElementValueType.BYTE_ARRAY
+          : ElementValueType.DOUBLE;
     }
   }
 
-  private static double[]  toDoubleArray(int[] values, int numberPoint) {
-    double[] doubles = new double[values.length];
-    for (int i = 0; i < values.length; i++) {
-      if (values[i] > 0) {
-        doubles[i] = (double) values[i] / Sl651CodecUtils.ptn(numberPoint);
-      } else {
-        doubles[i] = 0;
-      }
+  private static int valueLength(ElementId elementId) {
+    switch (elementId.id()) {
+      case 0xF0:
+      case 0xF1:
+        return 5;
+      case 0xF4:
+        return 12;
+      case 0xF5:
+      case 0xF6:
+      case 0xF7:
+      case 0xF8:
+      case 0xF9:
+      case 0xFA:
+      case 0xFB:
+      case 0xFC:
+        return 24;
+      case 0x04:
+        return 3;
+      case 0x45:
+        return 4;
+      default:
+        return elementId.readLength();
     }
-    return doubles;
   }
 
   public static ElementId decodeElementId(ByteBuf byteBuf) {

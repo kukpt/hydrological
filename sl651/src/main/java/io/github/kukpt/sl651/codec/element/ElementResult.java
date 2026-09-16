@@ -11,7 +11,11 @@ public class ElementResult {
 
   private final ElementId elementId;
 
-  private final Object value;
+  /**
+   * The bytes exactly as they appeared in the message body. Typed values are
+   * derived from these bytes on demand so the original value is never lost.
+   */
+  private final byte[] rawValue;
 
   private final int numberOfBytesConsumed;
 
@@ -27,46 +31,71 @@ public class ElementResult {
     return this.valueType;
   }
 
+  /**
+   * Returns a defensive copy of the element value as received on the wire.
+   */
+  public byte[] rawValue() {
+    return this.rawValue.clone();
+  }
+
   public long statusValue() {
-    if (this.valueType == ElementValueType.STATUS) {
-      return (Long) this.value;
-    }
-    throw new IllegalStateException("Unsupported value type: " + this.valueType);
+    requireValueType(ElementValueType.STATUS);
+    return this.status32Value();
   }
 
   public double doubleValue() {
-    if (this.valueType == ElementValueType.DOUBLE) {
-      return (Double) this.value;
-    }
-    throw new IllegalStateException("Unsupported value type: " + this.valueType);
+    requireValueType(ElementValueType.DOUBLE);
+    return ElementValueUtils.doubleValue(this.rawValue, this.elementId);
   }
 
   public String stringValue() {
-    if (this.valueType == ElementValueType.STRING) {
-      return (String) this.value;
-    }
-    throw new IllegalStateException("Unsupported value type: " + this.valueType);
+    requireValueType(ElementValueType.STRING);
+    return ElementValueUtils.stringValue(this.rawValue);
   }
 
   public double[] doubleArrayValue() {
-    if (this.valueType == ElementValueType.DOUBLE_ARRAY) {
-      return (double[]) this.value;
-    }
-    throw new IllegalStateException("Unsupported value type: " + this.valueType);
+    requireValueType(ElementValueType.DOUBLE_ARRAY);
+    return ElementValueUtils.doubleArrayValue(this.rawValue, this.elementId);
   }
 
   public byte[] byteArrayValue() {
-    if (this.valueType == ElementValueType.BYTE_ARRAY) {
-      return ((byte[]) this.value).clone();
-    }
-    throw new IllegalStateException("Unsupported value type: " + this.valueType);
+    requireValueType(ElementValueType.BYTE_ARRAY);
+    return this.rawValue();
   }
 
   public TimeStep timeStepValue() {
-    if (this.valueType == ElementValueType.TIME_STEP) {
-      return (TimeStep) this.value;
+    requireValueType(ElementValueType.TIME_STEP);
+    return ElementValueUtils.timeStepValue(this.rawValue);
+  }
+
+  public String asciiValue() {
+    return ElementValueUtils.asciiValue(this.rawValue);
+  }
+
+  public int intValue() {
+    return ElementValueUtils.intValue(this.rawValue);
+  }
+
+  public long longValue() {
+    return ElementValueUtils.longValue(this.rawValue);
+  }
+
+  public int status8Value() {
+    return ElementValueUtils.status8Value(this.rawValue);
+  }
+
+  public int status16Value() {
+    return ElementValueUtils.status16Value(this.rawValue);
+  }
+
+  public long status32Value() {
+    return ElementValueUtils.status32Value(this.rawValue);
+  }
+
+  private void requireValueType(ElementValueType expectedValueType) {
+    if (this.valueType != expectedValueType) {
+      throw new IllegalStateException("Unsupported value type: " + this.valueType);
     }
-    throw new IllegalStateException("Unsupported value type: " + this.valueType);
   }
 
   public String value() {
@@ -83,14 +112,15 @@ public class ElementResult {
         return Double.toString(this.doubleValue());
       case TIME_STEP:
         return this.timeStepValue().toString();
-        default:
-          return this.value.toString();
+      default:
+        return Arrays.toString(this.rawValue);
     }
   }
 
-  ElementResult(ElementValueType valueType, Object value, ElementId elementId, int numberOfBytesConsumed) {
+  ElementResult(ElementValueType valueType, byte[] rawValue, ElementId elementId,
+                int numberOfBytesConsumed) {
     this.valueType = valueType;
-    this.value = value;
+    this.rawValue = rawValue.clone();
     this.elementId = elementId;
     this.numberOfBytesConsumed = numberOfBytesConsumed;
   }

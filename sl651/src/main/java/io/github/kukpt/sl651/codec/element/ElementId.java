@@ -18,7 +18,7 @@ public class ElementId {
     return readLength;
   }
 
-  int numberPoint() {
+  public int numberPoint() {
     return numberPoint;
   }
 
